@@ -128,7 +128,7 @@ function getBase64(file) {
 const ProductInfoForm = (props) => {
   const {product = null, categories, refetch, ...modalProps} = props;
   const configCache = useConfigCache();
-  const fileLimit = 4;
+  const fileLimit = 6;
 
   const [ form ] = Form.useForm();
   const [ fileList, setFileList ] = useState([]);
@@ -506,7 +506,7 @@ const ProductInfoForm = (props) => {
               <Switch checkedChildren="Active" unCheckedChildren="Inactive" />
             </Form.Item>
 
-            <Form.Item name={'images'} label="Images">
+            <Form.Item name={'images'} label={`Images (max: ${fileLimit})`}>
               <React.Fragment>
                 <Upload
                   accept="image/*"
