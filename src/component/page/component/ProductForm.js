@@ -9,7 +9,9 @@ import { showMessage } from '../../../utils/component/notification';
 import InventoryFormTable from './InventoryFormTable';
 
 import qiniuAPI from '../../../utils/qiniuAPI';
-import { useConfigCache } from '../../../utils/Constants';
+import { useConfigCache, productTypeOptions } from '../../../utils/Constants';
+import Loading from '../../../utils/component/Loading';
+
 // import ApolloClientAPI from '../../../utils/ApolloClientAPI';
 
 const { Panel } = Collapse;
@@ -23,6 +25,7 @@ const READ_PRODUCT_INVENTORY_QUERY = gql`
       updatedAt
       price
       stock
+      weight
       variants
       published
       productId
@@ -126,9 +129,9 @@ function getBase64(file) {
 }
 
 const ProductInfoForm = (props) => {
-  const {product = null, categories, refetch, ...modalProps} = props;
+  const {product, categories, tags, type: productType, refetch, ...modalProps} = props;
   const configCache = useConfigCache();
-  const fileLimit = 6;
+  const fileLimit = configCache && configCache.productImageLimit ? configCache.productImageLimit : 4;
 
   const [ form ] = Form.useForm();
   const [ fileList, setFileList ] = useState([]);
@@ -138,12 +141,15 @@ const ProductInfoForm = (props) => {
   // inventory
   const [ inventoryData, setInventoryData ] = useState([]);
   const [ productCategory, setProductCategory ] = useState([]);
+  const [ productTags, setProductTags ] = useState([]);
   const [ newCategoryName, setNewCategoryName ] = useState('');
+  const [ newTagName, setNewTagName ] = useState('');
   const [ productVariants, setProductVariants ] = useState({'sku': 'SKU'});
 
   useEffect(() => {
     if (modalProps.modalVisible) {
       setProductCategory(categories)
+      setProductTags(tags)
 
       if (product) {
         let productObj = Object.assign({},product);
@@ -156,7 +162,13 @@ const ProductInfoForm = (props) => {
           })
           productObj['category'] = newCategoryFormat[0];
         }
+
+        if (!product.type) {
+          productObj['type'] = productType;
+        }
+
         form.setFieldsValue(productObj);
+
         if (product.variants) {
           setProductVariants(product.variants)
         }
@@ -258,7 +270,7 @@ const ProductInfoForm = (props) => {
 
     }
   })
-  const [deleteProduct] = useMutation(DELETE_PRODUCT_QUERY,{
+  const [deleteProduct, deleteProductResult] = useMutation(DELETE_PRODUCT_QUERY,{
     onCompleted: (result) => {
       // console.log("deleteProduct result",result)
       modalProps.onCancel();
@@ -275,8 +287,13 @@ const ProductInfoForm = (props) => {
     }
   })
 
+  let isLoading = readInventoryResult.loading ||
+                  createProductResult.loading ||
+                  deleteProductResult.loading ||
+                  updateProductResult.loading;
+
   const onFinish = async (values) => {
-// console.log('onFinish',values)
+console.log('onFinish',values)
     const { images, category, ...restValues } = values;
     let finalProductValue = {
       ...restValues,
@@ -313,7 +330,6 @@ const ProductInfoForm = (props) => {
     if (imagesToBeModified.delete.length > 0) {
       await QiniuAPI.batchDelete(imagesToBeModified.delete.map(anImage=>anImage.name))
     }
-
 
     if (!product) {
       createProduct({
@@ -388,6 +404,20 @@ const ProductInfoForm = (props) => {
         name: newCategoryName
       }]);
       setNewCategoryName('')
+    }
+  }
+
+  const onTagNameChange = (e) => {
+    setNewTagName(e.target.value);
+  }
+
+  const addNewTag = () => {
+    if (newTagName && newTagName != "") {
+      let foundTagIndex = productTags.indexOf(newTagName);
+      if (foundTagIndex < 0) {
+        setProductTags([...productTags, newTagName]);
+        setNewTagName('')
+      }
     }
   }
 
@@ -473,6 +503,18 @@ const ProductInfoForm = (props) => {
             <Form.Item name={'description'} label="Description">
               <Input.TextArea rows={4} />
             </Form.Item>
+            <Form.Item name={'type'} label="Type">
+              <Select
+                style={{ width: 240 }}
+                defaultValue={'0'}
+              >
+                {
+                  productTypeOptions.map((anOption, index)=>{
+                    return (<Option key={index} value={anOption.value}>{anOption.name}</Option>)
+                  })
+                }
+              </Select>
+            </Form.Item>
             <Form.Item name={'category'} label="Category">
               <Select
                 style={{ width: 240 }}
@@ -502,9 +544,35 @@ const ProductInfoForm = (props) => {
                 ))}
               </Select>
             </Form.Item>
-            <Form.Item name={'published'} label="Published" valuePropName="checked">
-              <Switch checkedChildren="Active" unCheckedChildren="Inactive" />
+            <Form.Item name={'tags'} label="Tags">
+              <Select
+                mode={"tags"}
+                //maxTagCount={2}
+                placeholder="Select Tags"
+                dropdownRender={menu => (
+                  <div>
+                    {menu}
+                    <Divider style={{ margin: '4px 0' }} />
+                    <div style={{ display: 'flex', flexWrap: 'nowrap', padding: 8 }}>
+                      <Input style={{ flex: 'auto' }} value={newTagName} onChange={onTagNameChange} required={true}/>
+                      <Button
+                        type="link"
+                        icon={<PlusOutlined />}
+                        onClick={addNewTag}
+                        disabled={newTagName.trim() != "" ? false : true}
+                      >
+                        New
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              >
+                {productTags.map((aTag, index) => (
+                  <Option key={index} value={aTag}>{aTag}</Option>
+                ))}
+              </Select>
             </Form.Item>
+            
 
             <Form.Item name={'images'} label={`Images (max: ${fileLimit})`}>
               <React.Fragment>
@@ -536,6 +604,9 @@ const ProductInfoForm = (props) => {
                 </Modal>
               </React.Fragment>
             </Form.Item>
+            <Form.Item name={'published'} label="Published" valuePropName="checked">
+              <Switch checkedChildren="Active" unCheckedChildren="Inactive" />
+            </Form.Item>
           </Form> 
 
         </Panel>
@@ -560,12 +631,15 @@ const ProductInfoForm = (props) => {
           ) : null
         } */}
       </Collapse>
+      {
+        isLoading ? <Loading/> : null
+      }
     </div>
   )
 }
 
 const ProductForm = (props) => {
-  const { product, categories = [], modalVisible, refetch, closeModal } = props;
+  const { product = null, categories = [], tags = [], type = "0", modalVisible, refetch, closeModal } = props;
   const [ modalFooter, setModalFooter ] = useState([]);
 
   let modalProps = {}
@@ -590,6 +664,8 @@ const ProductForm = (props) => {
         // product props
         product={product} 
         categories={categories}
+        tags={tags}
+        type={type}
         refetch={refetch}
 
         // modal props

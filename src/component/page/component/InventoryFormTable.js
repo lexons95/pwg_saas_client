@@ -3,6 +3,8 @@ import { Table, Input, Button, Popconfirm, Form, InputNumber, Modal, Tooltip, Sw
 import { DeleteOutlined, PlusOutlined, EditOutlined, CheckOutlined } from '@ant-design/icons';
 import update from 'immutability-helper';
 
+import { useConfigCache } from '../../../utils/Constants';
+
 const { Search } = Input;
 
 const EditableContext = React.createContext();
@@ -21,6 +23,8 @@ const EditableRow = ({ index, ...props }) => {
 const EditableCell = ({
   title,
   editable,
+  inputType = 'string',
+  required = false,
   children,
   dataIndex,
   record,
@@ -89,34 +93,16 @@ const EditableCell = ({
             height: '100%'
           }}
           name={dataIndex}
-          rules={[
-            {
-              required: true,
-              message: `${title} is required.`,
-            },
-          ]}
-        >
-          {
-            dataIndex == 'price' ?
-              <InputNumber 
-                ref={inputRef} 
-                min={0} 
-                step={1} 
-                formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                onPressEnter={save} 
-                onBlur={save}
-              /> 
-              : dataIndex == 'stock' ? 
-                <InputNumber 
-                  ref={inputRef} 
-                  min={0} 
-                  step={1} 
-                  onPressEnter={save} 
-                  onBlur={save}
-                />
-                : <Input ref={inputRef} onPressEnter={save} onBlur={save} />
+          rules={
+            required ? [
+              {
+                required: true,
+                message: `${title} is required.`,
+              }
+            ] : []
           }
+        >
+          {inputs[inputType](inputRef, save)}
         </Form.Item>
       ) : (
         <div
@@ -136,42 +122,91 @@ const EditableCell = ({
   return <td {...restProps}>{childNode}</td>;
 };
 
+const inputs = {
+  decimal: (inputRef, save) => {
+    return (
+      <InputNumber 
+        ref={inputRef} 
+        min={0} 
+        step={1} 
+        formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+        parser={value => value.replace(/\$\s?|(,*)/g, '')}
+        onPressEnter={save} 
+        onBlur={save}
+      /> 
+    )
+  },
+  integer: (inputRef, save) => {
+    return (
+      <InputNumber 
+        ref={inputRef} 
+        min={0} 
+        step={1} 
+        onPressEnter={save} 
+        onBlur={save}
+      />
+    )
+  },
+  string: (inputRef, save) => {
+    return (
+      <Input ref={inputRef} onPressEnter={save} onBlur={save} />
+    )
+  }
+}
+
 const InventoryFormTable = (props) => {
   const { productId, inventoryData, setInventoryData, productVariants, setProductVariants } = props;
   
+  const configCache = useConfigCache();
   const [ selectedRows, setSelectedRows ] = useState([]);
 
   const [ newColModal, setNewColModal ] = useState(false);
   const [ form ] = Form.useForm();
 
   const maxInventory = 20;
-  const maxVariants = 4;
+  const maxCustomVariants = 4;
+
+  const fixedVariants = [
+    {
+      name: 'Price' + (configCache && configCache.currencyUnit ? ` (${configCache.currencyUnit})` : ''),
+      value: 'price',
+      type: 'decimal',
+      required: true
+    },
+    {
+      name: 'Stock',
+      value: 'stock',
+      type: 'integer',
+      required: true
+    },
+    {
+      name: 'Weight',
+      value: 'weight',
+      type: 'decimal',
+      required: false
+    }
+  ]
 
   const getColumns = () => {
     let result = [];
     let variantColKeys = Object.keys(productVariants);
 
+    let fixedColumns = fixedVariants.map((aVariant)=>{
+      return {
+        title: aVariant.name,
+        dataIndex: aVariant.value,
+        editable: true,
+        width: 110,
+        fixed: 'right',
+        inputType: aVariant.type,
+        required: aVariant.required,
+        sorter: (a, b) => {
+          return a[aVariant.value] - b[aVariant.value]
+        },
+      }
+    });
+
     let defaultColumns = [
-      {
-        title: 'Price',
-        dataIndex: 'price',
-        editable: true,
-        width: 100,
-        fixed: 'right',
-        sorter: (a, b) => {
-          return a.price - b.price
-        },
-      },
-      {
-        title: 'Stock',
-        dataIndex: 'stock',
-        editable: true,
-        width: 100,
-        fixed: 'right',
-        sorter: (a, b) => {
-          return a.stock - b.stock
-        },
-      },
       {
         title: 'Published',
         dataIndex: 'published',
@@ -184,9 +219,6 @@ const InventoryFormTable = (props) => {
                 <Switch checkedChildren="Active" unCheckedChildren="Inactive" checked={record.published} onChange={(checked, e)=>{handleUpdatePublished(record, checked, e)}} />
               </div>
           )
-          // return (
-          //   record.published ? <Tag color="green">ON</Tag> : <Tag color="red">OFF</Tag>
-          // )
         } 
       },
       // {
@@ -233,7 +265,7 @@ const InventoryFormTable = (props) => {
               block
               type='link'
               icon={(<PlusOutlined/>)}
-              disabled={variantColKeys.length < maxVariants ? false : true}
+              disabled={variantColKeys.length < maxCustomVariants ? false : true}
             />
           </Tooltip>
         ),
@@ -249,6 +281,8 @@ const InventoryFormTable = (props) => {
           ) : null,
       }
     ];
+
+
 
     // result.push(
     //   {
@@ -317,7 +351,7 @@ const InventoryFormTable = (props) => {
       })
     }
     
-    return result.concat(defaultColumns);
+    return result.concat(fixedColumns).concat(defaultColumns);
   }
 
   const handleAddColumn = () => {
@@ -397,6 +431,8 @@ const InventoryFormTable = (props) => {
         dataIndex: col.dataIndex,
         title: col.title,
         isVariant: col.isVariant,
+        inputType: col.inputType,
+        required: col.required,
         handleSave: handleSave,
       }),
     };
@@ -437,7 +473,7 @@ const InventoryFormTable = (props) => {
         //rowSelection={rowSelection}
         size={"small"}
         pagination={false}
-        scroll={{ x: (columnsObj.length - 4) * 150 }}
+        scroll={{ x: (columnsObj.length - 5) * 150 }}
       />
         {/* footer={(currentPageData)=>{
           return (

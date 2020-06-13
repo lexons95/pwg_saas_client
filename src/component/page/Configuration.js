@@ -24,6 +24,7 @@ const Configuration = (props) => {
   const configCache = useConfigCache();
   const [ form ] = Form.useForm();
   const [ fileList, setFileList ] = useState([]);
+  const [ logoFileList, setLogoFileList ] = useState([]);
 
   const fileLimit = 1;
 
@@ -49,6 +50,15 @@ const Configuration = (props) => {
           thumbUrl: configCache.imageSrc + configCache.paymentQRImage
         }])
       }
+      console.log('logoFileList',configCache.profile)
+
+      if (configCache.profile && configCache.profile.logo && configCache.profile.logo != '') {
+        setLogoFileList([{
+          uid: configCache.profile.logo,
+          url: configCache.imageSrc + configCache.profile.logo,
+          thumbUrl: configCache.imageSrc + configCache.profile.logo
+        }])
+      }
 
       form.setFieldsValue({
         notice: configCache.profile.notice,
@@ -56,7 +66,7 @@ const Configuration = (props) => {
       })
     }
   },[configCache]);
-
+console.log('logoFileList',logoFileList)
   // const props2 = {
   //   listType: 'picture',
   //   defaultFileList: [...fileList],
@@ -72,6 +82,9 @@ const Configuration = (props) => {
   const handleFileListChange = ({ fileList: newFileList }) => {
     setFileList(newFileList)
   };
+  const handleLogoFileListChange = ({ fileList: newFileList }) => {
+    setLogoFileList(newFileList)
+  };
 
   const handleSubmit = async (values) => {
     console.log('handleSubmit',values)
@@ -82,42 +95,119 @@ const Configuration = (props) => {
       'delivery': values.delivery
     }
 
-    let paymentQRChanged = false;
-    let currentPaymentQRImage = configCache.paymentQRImage;
-    let paymentQRImageResult = "";
-    if (fileList.length > 0) {
-      if (fileList[0].originFileObj && currentPaymentQRImage != fileList[0].name) {
-        let imageNameSplited = fileList[0].name.split('.');
-        let newImageName = `saas_payment_${new Date().getTime()}_${imageNameSplited[imageNameSplited.length - 2]}.${imageNameSplited[imageNameSplited.length - 1]}`;
-        paymentQRImageResult = newImageName;
-        paymentQRChanged = true;
+    // handle payment image
+
+    const handleImageInput = (fileList = [], defaultConfigValue, fieldName) => {
+      let changed = false;
+      let current = defaultConfigValue;
+      let result = "";
+      if (fileList.length > 0) {
+        if (fileList[0].originFileObj && current != fileList[0].name) {
+          let imageNameSplited = fileList[0].name.split('.');
+          let newImageName = `saas_${fieldName}_${new Date().getTime()}_${imageNameSplited[imageNameSplited.length - 2]}.${imageNameSplited[imageNameSplited.length - 1]}`;
+          result = newImageName;
+          changed = true;
+        }
+      }
+      else {
+        if (current != "") {
+          result = "";
+          changed = true;
+        }
+      }
+
+      return {
+        changed: changed,
+        current: current,
+        result: result
       }
     }
-    else {
-      if (currentPaymentQRImage != "") {
-        paymentQRImageResult = "";
-        paymentQRChanged = true;
-      }
-    }
+
+    // let paymentQRChanged = false;
+    // let currentPaymentQRImage = configCache.paymentQRImage;
+    // let paymentQRImageResult = "";
+    // if (fileList.length > 0) {
+    //   if (fileList[0].originFileObj && currentPaymentQRImage != fileList[0].name) {
+    //     let imageNameSplited = fileList[0].name.split('.');
+    //     let newImageName = `saas_payment_${new Date().getTime()}_${imageNameSplited[imageNameSplited.length - 2]}.${imageNameSplited[imageNameSplited.length - 1]}`;
+    //     paymentQRImageResult = newImageName;
+    //     paymentQRChanged = true;
+    //   }
+    // }
+    // else {
+    //   if (currentPaymentQRImage != "") {
+    //     paymentQRImageResult = "";
+    //     paymentQRChanged = true;
+    //   }
+    // }
+
+    // if (configCache && configCache.configId) {
+    //   if (paymentQRChanged) {
+    //     setter['paymentQRImage'] = paymentQRImageResult;
+
+    //     const QiniuAPI = await qiniuAPI();
+
+    //     if (paymentQRImageResult != "") {
+    //       let newFileObject = {...fileList[0], name: paymentQRImageResult}
+    //       await QiniuAPI.upload(newFileObject)
+    //       if (currentPaymentQRImage != "") {
+    //         await QiniuAPI.batchDelete([configCache.paymentQRImage])
+    //       }
+    //     }
+    //     else {
+    //       if (currentPaymentQRImage != "") {
+    //         await QiniuAPI.batchDelete([configCache.paymentQRImage])
+    //       }
+    //     }
+    //   }
+    //   updateConfig({
+    //     variables: {
+    //       config: setter,
+    //       configId: configCache.configId
+    //     }
+    //   })
+    // }
+
+    let paymentImage = handleImageInput(fileList, configCache.paymentQRImage, 'payment')
+    let logoImage = handleImageInput(logoFileList, configCache.profile.logo, 'logo')
 
     if (configCache && configCache.configId) {
-      if (paymentQRChanged) {
-        setter['paymentQRImage'] = paymentQRImageResult;
-
+      if (paymentImage.changed || logoImage.changed) {
         const QiniuAPI = await qiniuAPI();
+        if (paymentImage.changed) {
+          setter['paymentQRImage'] = paymentImage.result;
 
-        if (paymentQRImageResult != "") {
-          let newFileObject = {...fileList[0], name: paymentQRImageResult}
-          await QiniuAPI.upload(newFileObject)
-          if (currentPaymentQRImage != "") {
-            await QiniuAPI.batchDelete([configCache.paymentQRImage])
+          if (paymentImage.result != "") {
+            let newFileObject = {...fileList[0], name: paymentImage.result}
+            await QiniuAPI.upload(newFileObject)
+            if (paymentImage.current != "") {
+              await QiniuAPI.batchDelete([configCache.paymentQRImage])
+            }
+          }
+          else {
+            if (paymentImage.current != "") {
+              await QiniuAPI.batchDelete([configCache.paymentQRImage])
+            }
           }
         }
-        else {
-          if (currentPaymentQRImage != "") {
-            await QiniuAPI.batchDelete([configCache.paymentQRImage])
+  
+        if (logoImage.changed) {
+          setter['profile.logo'] = logoImage.result;
+
+          if (logoImage.result != "") {
+            let newFileObject = {...logoFileList[0], name: logoImage.result}
+            await QiniuAPI.upload(newFileObject)
+            if (logoImage.current != "") {
+              await QiniuAPI.batchDelete([configCache.profile.logo])
+            }
+          }
+          else {
+            if (logoImage.current != "") {
+              await QiniuAPI.batchDelete([configCache.profile.logo])
+            }
           }
         }
+
       }
       updateConfig({
         variables: {
@@ -128,13 +218,20 @@ const Configuration = (props) => {
     }
 
 
-
   }
 
-  let deliveryConfig = {
-    'type': 'static',
-    
-  }
+  let deliveryConfig = [
+    {
+      'type': 'static',
+      'value': 12
+    },
+    {
+      'type': 'static',
+      'value': 12
+    },
+  ]
+  // additional charges to set in config
+  // cart limitation to place order: total weight/price/quantity
   return (
     <Page_01
       title={"Configuration"}
@@ -158,11 +255,25 @@ const Configuration = (props) => {
               listType="picture-card"
               fileList={fileList}
               onChange={handleFileListChange}
-              customRequest={()=>{
-                console.log('haha')
-              }}
             >
               {fileList.length < fileLimit ? uploadButton : null}
+            </Upload>
+          {/* </ImgCrop> */}
+        </Form.Item>
+        <Form.Item label="Logo" name="logo">
+          {/* <ImgCrop rotate> */}
+            <Upload
+              accept="image/*"
+              beforeUpload={ (file) => {
+                console.log("beforeUpload",file)
+                return false;
+              }}
+              //multiple={true}
+              listType="picture-card"
+              fileList={logoFileList}
+              onChange={handleLogoFileListChange}
+            >
+              {logoFileList.length < 1 ? uploadButton : null}
             </Upload>
           {/* </ImgCrop> */}
         </Form.Item>

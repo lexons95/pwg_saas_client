@@ -82,6 +82,7 @@ const OrderInfo = (props) => {
             <Descriptions.Item label="收件地址">{order.customer.address}</Descriptions.Item>
             <Descriptions.Item label="邮编">{order.customer.postcode}</Descriptions.Item>
             <Descriptions.Item label="省份">{order.customer.province}</Descriptions.Item>
+            <Descriptions.Item label="备注">{order.remark ? order.remark : '-'}</Descriptions.Item>
         </Descriptions>
         <Divider orientation="left">购买列表</Divider>
         <List

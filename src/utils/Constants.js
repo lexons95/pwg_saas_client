@@ -3,11 +3,25 @@ import gql from "graphql-tag";
 
 import DefaultClientAPI from '../index';
 
-// export const MIDDLETIER_URL = "http://localhost:3000/graphql";
-export const MIDDLETIER_URL = "http://15.165.150.23/graphql";
+export const MIDDLETIER_URL = "http://localhost:3000/graphql";
+// export const MIDDLETIER_URL = "http://15.165.150.23/graphql";
 
 export const defaultImage_system = require("./noImageFound.png");
 
+export const productTypeOptions = [
+  {
+    name: "商品 - 国内",
+    value: "0"
+  },
+  {
+    name: "商品 - 国外",
+    value: "1"
+  },
+  {
+    name: "赠品",
+    value: "-1"
+  }
+]
 
 export const getAllProductCategory = (products) => {
   let result = [];
@@ -21,6 +35,21 @@ export const getAllProductCategory = (products) => {
         let foundPushedItem = result.find((anItem)=>anItem._id == aCategory._id);
         if (!foundPushedItem) {
           result.push(aCategory);
+        }
+      })
+    }
+  });
+  return result;
+}
+
+export const getAllProductTags = (products) => {
+  let result = [];
+  products.map((aProduct)=>{
+    if (aProduct.tags && aProduct.tags.length > 0) {
+      aProduct.tags.map((aTag)=>{
+        let foundPushedItem = result.indexOf(aTag);
+        if (foundPushedItem < 0) {
+          result.push(aTag);
         }
       })
     }
@@ -145,11 +174,14 @@ const GET_CONFIG_CACHE_QUERY = gql`
       imageSrc
       paymentQRImage
       server
+      currencyUnit
       profile {
         name
         notice
+        logo
       }
       delivery
+      productImageLimit
     }
   }
 `
@@ -163,11 +195,14 @@ const SET_CONFIG_CACHE_QUERY = gql`
       imageSrc
       paymentQRImage
       server
+      currencyUnit
       profile {
         name
         notice
+        logo
       }
       delivery
+      productImageLimit
     }
   }
 `

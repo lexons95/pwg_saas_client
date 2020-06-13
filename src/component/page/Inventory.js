@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 import Page_01 from './component/Page_01';
 import Loading from '../../utils/component/Loading';
 import ProductForm from './component/ProductForm';
-import { useConfigCache, getAllProductCategory } from '../../utils/Constants';
+import { useConfigCache, getAllProductCategory, getAllProductTags, productTypeOptions } from '../../utils/Constants';
 import qiniuAPI from '../../utils/qiniuAPI';
 
 const { Option } = Select;
@@ -26,6 +26,8 @@ const GET_PRODUCTS_QUERY = gql`
       description
       category
       variants
+      tags
+      type
       published
       images
     }
@@ -74,10 +76,12 @@ const Inventory = (props) => {
   const [ selectedItems, setSelectedItems ] = useState([]);
   const [ displaySelectionPanel, setDisplaySelectionPanel ] = useState(false);
 
+  const [ selectedTypeFilter, setSelectedTypeFilter ] = useState("");
   const [ selectedCategoryFilter, setSelectedCategoryFilter ] = useState("");
 
   const configCache = useConfigCache();
-  const { data: productsData, loading, error, refetch: refetchProducts } = useQuery(GET_PRODUCTS_QUERY, {
+
+  const { data: productsData, loading: loadingProducts, error, refetch: refetchProducts } = useQuery(GET_PRODUCTS_QUERY, {
     fetchPolicy: "cache-and-network",
     variables: {
       filter: {
@@ -96,7 +100,7 @@ const Inventory = (props) => {
     }
   });
 
-  const { data: inventoryData, loading: inventoryLoading, error: inventoryError, refetch: refetchInventory } = useQuery(READ_PRODUCT_INVENTORY_QUERY, {
+  const { data: inventoryData, loading: loadingInventory, error: inventoryError, refetch: refetchInventory } = useQuery(READ_PRODUCT_INVENTORY_QUERY, {
     fetchPolicy: "cache-and-network",
     variables: {
       configId: configCache.configId
@@ -109,12 +113,12 @@ const Inventory = (props) => {
     }
   });
 
-  const [updateProductPublish] = useMutation(UPDATE_PRODUCT_PUBLISH,{
+  const [updateProductPublish, updateProductPublishResult] = useMutation(UPDATE_PRODUCT_PUBLISH,{
     onCompleted: (result) => {
       refetchProducts();
     }
   });
-  const [updateInventoryPublish] = useMutation(UPDATE_INVENTORY_PUBLISH,{
+  const [updateInventoryPublish, updateInventoryPublishResult] = useMutation(UPDATE_INVENTORY_PUBLISH,{
     onCompleted: (result) => {
       refetchInventory();
     }
@@ -130,6 +134,10 @@ const Inventory = (props) => {
     }
   },[selectedItems.length])
 
+  let isLoading = loadingProducts || 
+                  loadingInventory ||
+                  updateProductPublishResult.loading ||
+                  updateInventoryPublishResult.loading;
 
   const handleProductFormModalOpen = () => {
     setProductFormModal(true);
@@ -186,6 +194,29 @@ const Inventory = (props) => {
             newName = "-";
           }
           result = newName;
+        }
+        return result;
+      }
+    },
+    {
+      title: 'Type',
+      dataIndex: 'type',
+      sorter: (a, b) => {
+        if (a.type && b.type) {
+          return a.type - b.type
+        }
+        return 0;
+      },
+      render: (text, record) => {
+        let result = record.type;
+        if (!result) {
+          result = '-';
+        }
+        else {
+          let foundOption = productTypeOptions.find((anOption)=>anOption.value == result);
+          if (foundOption) {
+            result = foundOption.name
+          }
         }
         return result;
       }
@@ -313,25 +344,38 @@ const Inventory = (props) => {
     selectedRowKeys: selectedItems.map((anItem)=>anItem._id)
   };
 
-  const filterProductByCategory = (products) => {
+  const filterProducts = (products) => {
     let result = [];
-    if (selectedCategoryFilter != "" && selectedCategoryFilter != 'none') {
-      result = products.filter((aProduct)=>{
-        let found = aProduct.category.find((aCategory)=>{return aCategory._id == selectedCategoryFilter})
-        if (found) {
-          return true;
-        }
-        return false;
-      })
-    } 
-    else if (selectedCategoryFilter == 'none') {
-      result = products.filter((aProduct)=>{
-        return aProduct.category.length == 0;
-      })
+
+    let filteredType = [];
+
+    if (selectedTypeFilter != "") {
+      filteredType = products.filter((aProduct)=>{ return aProduct.type == selectedTypeFilter });
     }
     else {
-      result = products;
+      filteredType = products;
     }
+
+    if (filteredType.length > 0) {
+      if (selectedCategoryFilter != "" && selectedCategoryFilter != 'none') {
+        result = filteredType.filter((aProduct)=>{
+          let found = aProduct.category.find((aCategory)=>{return aCategory._id == selectedCategoryFilter})
+          if (found) {
+            return true;
+          }
+          return false;
+        })
+      } 
+      else if (selectedCategoryFilter == 'none') {
+        result = filteredType.filter((aProduct)=>{
+          return aProduct.category.length == 0;
+        })
+      }
+      else {
+        result = filteredType;
+      }
+    }
+
     return result;
   }
 
@@ -339,7 +383,7 @@ const Inventory = (props) => {
     let result = [];
     if (productsData && inventoryData && !error && !inventoryError) {
       let inventoryWithKey = inventoryData.inventory.map((anInventory)=>{ return {...anInventory, key: anInventory._id} });
-      filterProductByCategory(productsData.products).map((aProduct,index)=>{
+      filterProducts(productsData.products).map((aProduct,index)=>{
         let productInventory = inventoryWithKey.filter((anInventory)=>anInventory.productId == aProduct._id);
         aProduct['key'] = aProduct._id;
         if (productInventory.length > 0) {
@@ -353,6 +397,8 @@ const Inventory = (props) => {
 
   let hasSelected = selectedItems.length > 0 ? true : false;
   let allCategories = productsData && productsData.products ? getAllProductCategory(productsData.products) : []
+  let allTags = productsData && productsData.products ? getAllProductTags(productsData.products) : []
+
   let tableData = getTableData()
 
   const getAllImagesName = async () => {
@@ -385,31 +431,66 @@ const Inventory = (props) => {
         <Button key="create" type="primary" icon={<PlusOutlined />} onClick={()=>{handleOnClickProduct(null)}} />
       ]}
     >
-      {/* <Form.Item label={'Filter'}> */}
-        <Select
-          placeholder="Category"
-          onChange={(value)=>{
-            setSelectedCategoryFilter(value)
-          }}
-          defaultValue={selectedCategoryFilter}
-          style={{minWidth: '35%', marginBottom: '24px'}}
-        >
-          <Option key={'all'} value={""}>All</Option>  
-          {
-            allCategories.map((aCategory,index)=>{
-              return (
-                <Option key={index} value={aCategory._id}>{aCategory.name}</Option>
-              )
-            })
-          }
-          <Option key={'none'} value={"none"}>Without Category</Option>  
-        </Select>
-      {/* </Form.Item> */}
+      <Form layout="inline">
+        <Form.Item label={'Type'}>
+          <Select
+            placeholder="Type"
+            onChange={(value)=>{
+              setSelectedTypeFilter(value)
+            }}
+            defaultValue={selectedTypeFilter}
+            style={{
+              width: '100px',
+              //minWidth: '35%', 
+              //marginBottom: '24px'
+            }}
+          >
+            <Option key={'all'} value={""}>全部</Option>  
+            {
+              productTypeOptions.map((aType,index)=>{
+                return (
+                  <Option key={index} value={aType.value}>{aType.name}</Option>
+                )
+              })
+            }
+          </Select>
+        </Form.Item>
+        <Form.Item label={'Category'}>
+          <Select
+            placeholder="Category"
+            onChange={(value)=>{
+              setSelectedCategoryFilter(value)
+            }}
+            defaultValue={selectedCategoryFilter}
+            style={{
+              width: '150px',
+              //minWidth: '35%', 
+              //marginBottom: '24px'
+            }}
+          >
+            <Option key={'all'} value={""}>全部</Option>  
+            {
+              allCategories.map((aCategory,index)=>{
+                return (
+                  <Option key={index} value={aCategory._id}>{aCategory.name}</Option>
+                )
+              })
+            }
+            <Option key={'none'} value={"none"}>Without Category</Option>  
+          </Select>
+        </Form.Item>
+      </Form>
       <Table 
         columns={columns} 
         rowSelection={rowSelection} 
         dataSource={tableData} 
-        pagination={false}
+        pagination={{
+          showSizeChanger: true,
+          position: ['topRight'],
+          showTotal: (total, range)=>{
+            return `Showing ${range[0]}-${range[1]}/${total}`
+          }
+        }}
         scroll={{x: columns.length * 150}}
         size={'small'}
       />
@@ -421,12 +502,17 @@ const Inventory = (props) => {
         // product props
         product={selectedProduct} 
         categories={allCategories}
+        tags={allTags}
         refetch={refetchData}
 
         // modal props
         modalVisible={productFormModal}
         closeModal={handleProductFormModalClose}
       />
+
+      {
+        isLoading ? <Loading/> : null
+      }
     </Page_01>
   )
 
