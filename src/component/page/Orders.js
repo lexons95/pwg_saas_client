@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import { Tabs, Table, Button, Input, Popconfirm } from 'antd';
-import { format } from 'date-fns';
+import { format, differenceInBusinessDays } from 'date-fns';
 import gql from "graphql-tag";
 import { useQuery, useMutation } from "@apollo/react-hooks";
 import { CheckOutlined, RedoOutlined } from '@ant-design/icons';
@@ -118,7 +118,7 @@ const Orders = (props) => {
     }
   })
 
-  let isLoading = updateOrderStatusResult.loading || 
+  let isLoading = updateOrderStatusResult.loading ||
                   updateOrderPaymentResult.loading ||
                   updateOrderDeliveryResult.loading ||
                   cancelOrderResult.loading ||
@@ -194,7 +194,7 @@ const Orders = (props) => {
   )
 
   const getColumnsByTable = () => {
-    
+
     let tableCol1 = [...defaultColumns, ...[
       {
         title: "付款状态",
@@ -232,10 +232,10 @@ const Orders = (props) => {
           {/* <Button type="danger" size="small" onClick={handleCancelOrder}>取消</Button> */}
             </Popconfirm>
           )
-        } 
+        }
       }
     ]];
-    
+
     let tableCol2 = [...defaultColumns, ...[
       {
         title: "付款状态",
@@ -278,7 +278,7 @@ const Orders = (props) => {
             />
           )
           return result;
-        } 
+        }
       }
     ]]
 
@@ -291,6 +291,20 @@ const Orders = (props) => {
         render: (text, record) => {
           let dateTime = format(new Date(text), "MM/dd/yyyy hh:mm:ss aa")
           return dateTime;
+        }
+      },
+      {
+        title: "Duration",
+        dataIndex: 'updatedAt',
+        key: 'updatedAt',
+        sorter: (a, b) => {
+          let durationA = differenceInBusinessDays(new Date(), new Date(a.updatedAt));
+          let durationB = differenceInBusinessDays(new Date(), new Date(b.updatedAt))
+          return durationA - durationB
+        },
+        render: (text, record) => {
+          var duration = differenceInBusinessDays(new Date(), new Date(text))
+          return duration;
         }
       },
       {
@@ -318,7 +332,7 @@ const Orders = (props) => {
             />
           )
           return result;
-        } 
+        }
       },
       {
         title: "Action",
@@ -355,7 +369,7 @@ const Orders = (props) => {
         key: 'trackingNum',
         render: (text, record) => {
           return text
-        } 
+        }
       }
     ]]
 
@@ -396,18 +410,18 @@ const Orders = (props) => {
       }
       else {
         switch(anOrder.status) {
-          case "0": 
+          case "0":
             orderList1.push(anOrder);
             break;
-          case "1": 
+          case "1":
             orderList2.push(anOrder);
             break;
-          case "2": 
+          case "2":
             orderList3.push(anOrder);
             break;
-          case "3": 
+          case "3":
             orderList4.push(anOrder);
-            break;          
+            break;
           default: break;
         }
       }
@@ -443,8 +457,8 @@ const Orders = (props) => {
         <TabPane tab="New Orders" key="1">
           <Table
             rowKey={'_id'}
-            columns={filteredColumns.newOrders} 
-            dataSource={filteredOrders.newOrders} 
+            columns={filteredColumns.newOrders}
+            dataSource={filteredOrders.newOrders}
             pagination={pagination}
             size="small"
             scroll={{x: filteredColumns.newOrders.length * colWidth}}
@@ -455,8 +469,8 @@ const Orders = (props) => {
         <TabPane tab="Paid Orders" key="2">
           <Table
             rowKey={'_id'}
-            columns={filteredColumns.paidOrders} 
-            dataSource={filteredOrders.paidOrders} 
+            columns={filteredColumns.paidOrders}
+            dataSource={filteredOrders.paidOrders}
             pagination={pagination}
             size="small"
             scroll={{x: filteredColumns.paidOrders.length * colWidth}}
@@ -467,8 +481,8 @@ const Orders = (props) => {
         <TabPane tab="Pending Orders" key="3">
           <Table
             rowKey={'_id'}
-            columns={filteredColumns.pendingOrders} 
-            dataSource={filteredOrders.pendingOrders} 
+            columns={filteredColumns.pendingOrders}
+            dataSource={filteredOrders.pendingOrders}
             pagination={pagination}
             size="small"
             scroll={{x: filteredColumns.pendingOrders.length * colWidth}}
@@ -479,8 +493,8 @@ const Orders = (props) => {
         <TabPane tab="Completed Orders" key="4">
           <Table
             rowKey={'_id'}
-            columns={filteredColumns.completedOrders} 
-            dataSource={filteredOrders.completedOrders} 
+            columns={filteredColumns.completedOrders}
+            dataSource={filteredOrders.completedOrders}
             pagination={pagination}
             size="small"
             scroll={{x: filteredColumns.completedOrders.length * colWidth}}
