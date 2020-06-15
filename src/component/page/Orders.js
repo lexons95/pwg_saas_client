@@ -90,7 +90,7 @@ const Orders = (props) => {
 
     },
     onCompleted: (result) => {
-      console.log('Orders', result.orders)
+      // console.log('Orders', result.orders)
     }
   });
 
@@ -143,7 +143,7 @@ const Orders = (props) => {
       }
     },
     {
-      title: "订购日期",
+      title: "Order Date",
       dataIndex: 'createdAt',
       key: 'createdAt',
       sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
@@ -153,7 +153,7 @@ const Orders = (props) => {
       }
     },
     {
-      title: "订单编号",
+      title: "Order No.",
       dataIndex: '_id',
       key: '_id',
       render: (text, record) => {
@@ -163,7 +163,7 @@ const Orders = (props) => {
       }
     },
     {
-      title: "收货人",
+      title: "Customer",
       dataIndex: 'customer',
       key: 'customer',
       sorter: (a, b) => a.name - b.name,
@@ -172,7 +172,7 @@ const Orders = (props) => {
       }
     },
     {
-      title: "总计",
+      title: "Total",
       dataIndex: 'total',
       key: 'total',
       sorter: (a, b) => a.total - b.total
@@ -283,6 +283,16 @@ const Orders = (props) => {
     ]]
 
     let tableCol3 = [...defaultColumns, ...[
+      {
+        title: "Last Updated",
+        dataIndex: 'updatedAt',
+        key: 'updatedAt',
+        sorter: (a, b) => new Date(a.updatedAt) - new Date(b.updatedAt),
+        render: (text, record) => {
+          let dateTime = format(new Date(text), "MM/dd/yyyy hh:mm:ss aa")
+          return dateTime;
+        }
+      },
       {
         title: "Last Updated",
         dataIndex: 'updatedAt',

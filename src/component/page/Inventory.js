@@ -322,10 +322,11 @@ const Inventory = (props) => {
       setSelectedItems([])
     }
     return (
-      <div style={{display: 'flex'}}>
+      <div style={{display: 'flex', alignItems:'center'}}>
         <Button type="primary" size="small" onClick={updateToPublish} style={{marginRight: '5px'}} disabled={!displaySelectionPanel}>Publish</Button>
         <Button size="small" onClick={updateToUnpublish} style={{marginRight: '5px'}} disabled={!displaySelectionPanel}>Unpublish</Button>
         <Button size="small" onClick={clearSelection}>Cancel</Button>
+        &nbsp;{selectedItems.length} Selected
       </div>
     )
   }
@@ -437,10 +438,11 @@ const Inventory = (props) => {
             placeholder="Type"
             onChange={(value)=>{
               setSelectedTypeFilter(value)
+              setSelectedItems([])
             }}
             defaultValue={selectedTypeFilter}
             style={{
-              width: '100px',
+              width: '125px',
               //minWidth: '35%', 
               //marginBottom: '24px'
             }}
@@ -460,6 +462,7 @@ const Inventory = (props) => {
             placeholder="Category"
             onChange={(value)=>{
               setSelectedCategoryFilter(value)
+              setSelectedItems([])
             }}
             defaultValue={selectedCategoryFilter}
             style={{
