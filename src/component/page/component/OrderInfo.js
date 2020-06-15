@@ -40,6 +40,12 @@ const OrderInfo = (props) => {
     )
   }
 
+  let extraCharges = []
+  let foundDutyTaxInsurance = order && order.charges && order.charges.length > 0 ? order.charges.find((aCharge)=>{return aCharge.code && aCharge.code == "dutyTaxInsurance"}) : null
+  if (foundDutyTaxInsurance != null) {
+    extraCharges.push(foundDutyTaxInsurance)
+  }
+
   return (
     <Modal
       title={"Order"}
@@ -99,6 +105,12 @@ const OrderInfo = (props) => {
                 style={{maxWidth:"100%"}}
               >
                 <Descriptions.Item label={"邮费"}>{order.deliveryFee ? order.deliveryFee : 0}</Descriptions.Item>
+                {
+                  extraCharges.length > 0 ? 
+                  extraCharges.map((aCharge, index)=>{
+                    return <Descriptions.Item key={index} label={aCharge.name}>{aCharge.value}</Descriptions.Item>
+                  }) : null
+                }
                 <Descriptions.Item label="总计">{order.total}</Descriptions.Item>
               </Descriptions>
             </div>
