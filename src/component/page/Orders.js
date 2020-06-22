@@ -7,7 +7,7 @@ import { CheckOutlined, RedoOutlined } from '@ant-design/icons';
 
 import Page_01 from './component/Page_01';
 import OrderInfo from './component/OrderInfo';
-import { useConfigCache } from '../../utils/Constants';
+import { useConfigCache } from '../../utils/customHook';
 import Loading from '../../utils/component/Loading';
 
 const { TabPane } = Tabs;

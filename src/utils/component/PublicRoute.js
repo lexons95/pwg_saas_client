@@ -1,6 +1,6 @@
 import React from 'react';
 import { Route, Redirect, useLocation } from 'react-router-dom';
-import { useUserCache, useConfigCache } from '../Constants';
+import { useUserCache, useConfigCache } from '../customHook';
 
 const PublicRoute = ({ component: Component, restricted, ...rest }) => {
   let routeLocation = useLocation();

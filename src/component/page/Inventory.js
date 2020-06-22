@@ -11,7 +11,8 @@ import { format } from 'date-fns';
 import Page_01 from './component/Page_01';
 import Loading from '../../utils/component/Loading';
 import ProductForm from './component/ProductForm';
-import { useConfigCache, getAllProductCategory, getAllProductTags, productTypeOptions } from '../../utils/Constants';
+import { getAllProductCategory, getAllProductTags } from '../../utils/Constants';
+import { useConfigCache, getConfigCache } from '../../utils/customHook';
 import qiniuAPI from '../../utils/qiniuAPI';
 
 const { Option } = Select;
@@ -80,6 +81,7 @@ const Inventory = (props) => {
   const [ selectedCategoryFilter, setSelectedCategoryFilter ] = useState("");
 
   const configCache = useConfigCache();
+  let productTypeOptions = configCache.productTypes ? configCache.productTypes : [];
 
   const { data: productsData, loading: loadingProducts, error, refetch: refetchProducts } = useQuery(GET_PRODUCTS_QUERY, {
     fetchPolicy: "cache-and-network",
@@ -351,7 +353,12 @@ const Inventory = (props) => {
     let filteredType = [];
 
     if (selectedTypeFilter != "") {
-      filteredType = products.filter((aProduct)=>{ return aProduct.type == selectedTypeFilter });
+      if (selectedCategoryFilter == 'none') {
+        filteredType = products.filter((aProduct)=>{ return aProduct.type == null });
+      }
+      else {
+        filteredType = products.filter((aProduct)=>{ return aProduct.type == selectedTypeFilter });
+      }
     }
     else {
       filteredType = products;
@@ -455,6 +462,7 @@ const Inventory = (props) => {
                 )
               })
             }
+            <Option key={'none'} value={"none"}>其他</Option>  
           </Select>
         </Form.Item>
         <Form.Item label={'Category'}>
@@ -479,7 +487,7 @@ const Inventory = (props) => {
                 )
               })
             }
-            <Option key={'none'} value={"none"}>Without Category</Option>  
+            <Option key={'none'} value={"none"}>其他</Option>  
           </Select>
         </Form.Item>
       </Form>

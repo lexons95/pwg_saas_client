@@ -6,7 +6,7 @@ import gql from "graphql-tag";
 // import './css/base.css';
 import App from './App';
 import ApolloClientAPI from './utils/ApolloClientAPI';
-import { setUserCache, setConfigCache } from './utils/Constants';
+import { DefaultClientAPI, setUserCache, setConfigCache } from './utils/customHook';
 import * as serviceWorker from './serviceWorker';
 
 const GET_LOGGED_IN_USER = gql`
@@ -29,15 +29,8 @@ const GET_USER_CONFIG = gql`
   }
 `
 
-const theClientAPI = ApolloClientAPI();
-export default theClientAPI;
-const { client, cache, ...restClient } = theClientAPI;
-client.writeData({
-  data: {
-    user: null,
-    config: null
-  },
-})
+const { client, cache, ...restClient } = DefaultClientAPI;
+
 const run = () => {
   const doRender = (userData=null,configData=null) => {
     if (userData != null && configData != null) {

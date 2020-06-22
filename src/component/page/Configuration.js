@@ -7,7 +7,7 @@ import { useLazyQuery, useMutation } from "@apollo/react-hooks";
 
 import Page_01 from './component/Page_01';
 import qiniuAPI from '../../utils/qiniuAPI';
-import { useConfigCache, setConfigCache } from '../../utils/Constants';
+import { useConfigCache, setConfigCache } from '../../utils/customHook';
 import { showMessage } from '../../utils/component/notification';
 
 const UPDATE_CONFIG_QUERY = gql`
@@ -220,16 +220,6 @@ console.log('logoFileList',logoFileList)
 
   }
 
-  let deliveryConfig = [
-    {
-      'type': 'static',
-      'value': 12
-    },
-    {
-      'type': 'static',
-      'value': 12
-    },
-  ]
   // additional charges to set in config
   // cart limitation to place order: total weight/price/quantity
   return (
@@ -240,7 +230,7 @@ console.log('logoFileList',logoFileList)
         <Form.Item label="Notice" name="notice">
           <Input.TextArea/>
         </Form.Item>
-        <Form.Item label="Delivery Fee (Static)" name="delivery">
+        <Form.Item label="Delivery Fee (Fixed)" name="delivery">
           <InputNumber/>
         </Form.Item>
         <Form.Item label="Payment QR" name="paymentQRImage">

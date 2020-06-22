@@ -9,10 +9,8 @@ import { showMessage } from '../../../utils/component/notification';
 import InventoryFormTable from './InventoryFormTable';
 
 import qiniuAPI from '../../../utils/qiniuAPI';
-import { useConfigCache, productTypeOptions } from '../../../utils/Constants';
+import { useConfigCache } from '../../../utils/customHook';
 import Loading from '../../../utils/component/Loading';
-
-// import ApolloClientAPI from '../../../utils/ApolloClientAPI';
 
 const { Panel } = Collapse;
 const { Option } = Select;
@@ -131,6 +129,7 @@ function getBase64(file) {
 const ProductInfoForm = (props) => {
   const {product, categories, tags, type: productType, refetch, ...modalProps} = props;
   const configCache = useConfigCache();
+  let productTypeOptions = configCache.productTypes ? configCache.productTypes : [];
   const fileLimit = configCache && configCache.productImageLimit ? configCache.productImageLimit : 4;
 
   const [ form ] = Form.useForm();
@@ -164,7 +163,7 @@ const ProductInfoForm = (props) => {
         }
 
         if (!product.type) {
-          productObj['type'] = productType;
+          productObj['type'] = undefined;
         }
 
         form.setFieldsValue(productObj);
@@ -297,6 +296,7 @@ console.log('onFinish',values)
     const { images, category, ...restValues } = values;
     let finalProductValue = {
       ...restValues,
+      type: "",
       category: [],
       images: [], 
       variants: productVariants
@@ -304,6 +304,10 @@ console.log('onFinish',values)
 
     if (!values._id) {
       delete finalProductValue._id;
+    }
+
+    if (values.type) {
+      finalProductValue['type'] = values.type;
     }
 
     // handle category
@@ -506,7 +510,7 @@ console.log('onFinish',values)
             <Form.Item name={'type'} label="Type">
               <Select
                 style={{ width: 240 }}
-                defaultValue={'0'}
+                allowClear={true}
               >
                 {
                   productTypeOptions.map((anOption, index)=>{
@@ -639,7 +643,7 @@ console.log('onFinish',values)
 }
 
 const ProductForm = (props) => {
-  const { product = null, categories = [], tags = [], type = "0", modalVisible, refetch, closeModal } = props;
+  const { product = null, categories = [], tags = [], type = "", modalVisible, refetch, closeModal } = props;
   const [ modalFooter, setModalFooter ] = useState([]);
 
   let modalProps = {}

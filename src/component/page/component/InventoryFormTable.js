@@ -3,7 +3,7 @@ import { Table, Input, Button, Popconfirm, Form, InputNumber, Modal, Tooltip, Sw
 import { DeleteOutlined, PlusOutlined, EditOutlined, CheckOutlined } from '@ant-design/icons';
 import update from 'immutability-helper';
 
-import { useConfigCache } from '../../../utils/Constants';
+import { useConfigCache } from '../../../utils/customHook';
 
 const { Search } = Input;
 

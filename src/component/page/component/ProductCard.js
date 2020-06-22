@@ -1,6 +1,7 @@
 import React from 'react';
 import { Tag, Tooltip } from 'antd';
-import { useConfigCache, defaultImage_system } from '../../../utils/Constants';
+import { defaultImage_system } from '../../../utils/Constants';
+import { useConfigCache } from '../../../utils/customHook';
 
 const ProductCard = (props) => {
   const { product } = props;

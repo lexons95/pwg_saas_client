@@ -8,7 +8,7 @@ import {
   LogoutOutlined
 } from '@ant-design/icons';
 import confirmation from '../../utils/component/confirmation';
-import { useConfigCache, setConfigCache, setUserCache } from '../../utils/Constants';
+import { useConfigCache, setConfigCache, setUserCache } from '../../utils/customHook';
 
 const LOGOUT_MUTATION = gql`
     mutation logout {

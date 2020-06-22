@@ -23,7 +23,7 @@ import PrivateRoute from './utils/component/PrivateRoute';
 import PublicRoute from './utils/component/PublicRoute';
 import PageNotFound from './utils/component/PageNotFound';
 import Loading from './utils/component/Loading';
-import { useConfigCache } from './utils/Constants';
+import { useConfigCache } from './utils/customHook';
 
 
 let Component_Layout = Component['Layout_01'];

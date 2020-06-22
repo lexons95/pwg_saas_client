@@ -9,7 +9,7 @@ import {
 import ProductForm from './component/ProductForm';
 import ProductCard from './component/ProductCard';
 import Loading from '../../utils/component/Loading';
-import { useConfigCache } from '../../utils/Constants';
+import { useConfigCache } from '../../utils/customHook';
 
 const GET_PRODUCTS_QUERY = gql`
   query products($filter: JSONObject, $configId: String) {

@@ -5,7 +5,7 @@ import { Form, Input, Button, Checkbox } from 'antd';
 import { useHistory } from "react-router-dom";
 
 import Loading from '../../utils/component/Loading';
-import { setUserCache, setConfigCache } from '../../utils/Constants';
+import { setUserCache, setConfigCache } from '../../utils/customHook';
 import * as notification from '../../utils/component/notification';
 
 const LOGIN_MUTATION = gql`

@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, Divider, Descriptions, List, Avatar } from 'antd';
 import { format } from 'date-fns';
 
-import { useConfigCache } from '../../../utils/Constants';
+import { useConfigCache } from '../../../utils/customHook';
 
 const OrderInfo = (props) => {
   const { order, closeModal, visible, ...restProps } = props;
