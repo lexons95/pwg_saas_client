@@ -163,7 +163,7 @@ const InventoryFormTable = (props) => {
   const [ newColModal, setNewColModal ] = useState(false);
   const [ form ] = Form.useForm();
 
-  const maxInventory = 20;
+  const maxInventory = configCache.inventoryPerProductLimit ? configCache.inventoryPerProductLimit : 20;
   const maxCustomVariants = 4;
 
   const fixedVariants = [

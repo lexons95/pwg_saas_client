@@ -141,6 +141,7 @@ const GET_CONFIG_CACHE_QUERY = gql`
       }
       delivery
       productImageLimit
+      inventoryPerProductLimit
       productTypes
     }
   }
@@ -163,6 +164,7 @@ const SET_CONFIG_CACHE_QUERY = gql`
       }
       delivery
       productImageLimit
+      inventoryPerProductLimit
     }
   }
 `
