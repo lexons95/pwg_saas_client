@@ -256,6 +256,14 @@ export const getConfigCache = () => {
   return result;
 }
 
+export const clearCache = () => {
+  DefaultClientAPI.client.writeData({
+    data: {
+      user: null,
+      config: null
+    },
+  })
+}
 // Config Cache ---------------------------- end
 
 

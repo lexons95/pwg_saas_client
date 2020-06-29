@@ -8,7 +8,7 @@ import {
   LogoutOutlined
 } from '@ant-design/icons';
 import confirmation from '../../utils/component/confirmation';
-import { useConfigCache, setConfigCache, setUserCache } from '../../utils/customHook';
+import { useConfigCache, setConfigCache, setUserCache, clearCache } from '../../utils/customHook';
 
 const LOGOUT_MUTATION = gql`
     mutation logout {
@@ -33,8 +33,9 @@ const Header_01 = (props) => {
         // }
         
         apolloClient.resetStore().then(()=>{
-          setConfigCache(null)
-          setUserCache(null)
+          // setConfigCache(null)
+          // setUserCache(null)
+          clearCache()
           // routeHistory.push(redirectPath)
 
         })

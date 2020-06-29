@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLazyQuery, useMutation } from "@apollo/react-hooks";
 import gql from "graphql-tag";
 import { Form, Input, Button, Checkbox } from 'antd';
@@ -75,6 +75,10 @@ const Login = (props) => {
     }
   });
 
+  // useEffect(()=>{
+
+  // },[]);
+
   const onFinish = values => {
     login({
       variables: { user: values }
@@ -84,6 +88,8 @@ const Login = (props) => {
   const onFinishFailed = errorInfo => {
     console.log('Failed:', errorInfo);
   };
+
+
 
   return (
     <div id="page_login">

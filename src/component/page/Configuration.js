@@ -1,14 +1,16 @@
 import React, {useState, useEffect} from 'react';
-import { Form, Upload, Input, Button, InputNumber } from 'antd';
+import { Form, Upload, Input, Button, InputNumber, Select } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import ImgCrop from 'antd-img-crop';
 import gql from 'graphql-tag';
 import { useLazyQuery, useMutation } from "@apollo/react-hooks";
 
 import Page_01 from './component/Page_01';
+import ImageUpload from './component/ImageUpload';
 import qiniuAPI from '../../utils/qiniuAPI';
 import { useConfigCache, setConfigCache } from '../../utils/customHook';
 import { showMessage } from '../../utils/component/notification';
+import Loading from '../../utils/component/Loading';
 
 const UPDATE_CONFIG_QUERY = gql`
   mutation updateConfig($config: JSONObject, $configId: String!) {
@@ -26,9 +28,7 @@ const Configuration = (props) => {
   const [ fileList, setFileList ] = useState([]);
   const [ logoFileList, setLogoFileList ] = useState([]);
 
-  const fileLimit = 1;
-
-  const [ updateConfig ] = useMutation(UPDATE_CONFIG_QUERY,{
+  const [ updateConfig, { loading: updateLoading} ] = useMutation(UPDATE_CONFIG_QUERY,{
     onCompleted: (result) => {
       console.log('UPDATE_CONFIG_QUERY',result.updateConfig.data.value);
       setConfigCache(result.updateConfig.data.value)
@@ -66,29 +66,11 @@ const Configuration = (props) => {
       })
     }
   },[configCache]);
-console.log('logoFileList',logoFileList)
-  // const props2 = {
-  //   listType: 'picture',
-  //   defaultFileList: [...fileList],
-  //   className: 'upload-list-inline',
-  // };
-  const uploadButton = (
-    <div>
-      <PlusOutlined />
-      <div className="ant-upload-text">Upload</div>
-    </div>
-  );
-  
-  const handleFileListChange = ({ fileList: newFileList }) => {
-    setFileList(newFileList)
-  };
-  const handleLogoFileListChange = ({ fileList: newFileList }) => {
-    setLogoFileList(newFileList)
-  };
 
   const handleSubmit = async (values) => {
     console.log('handleSubmit',values)
     console.log('filelist',fileList)
+    console.log('logoFileList',logoFileList)
 
     let setter = {
       'profile.notice': values.notice,
@@ -234,43 +216,40 @@ console.log('logoFileList',logoFileList)
           <InputNumber/>
         </Form.Item>
         <Form.Item label="Payment QR" name="paymentQRImage">
-          {/* <ImgCrop rotate> */}
-            <Upload
-              accept="image/*"
-              beforeUpload={ (file) => {
-                console.log("beforeUpload",file)
-                return false;
-              }}
-              //multiple={true}
-              listType="picture-card"
-              fileList={fileList}
-              onChange={handleFileListChange}
-            >
-              {fileList.length < fileLimit ? uploadButton : null}
-            </Upload>
-          {/* </ImgCrop> */}
+          <ImageUpload fileList={fileList} setFileList={setFileList} />
         </Form.Item>
         <Form.Item label="Logo" name="logo">
-          {/* <ImgCrop rotate> */}
-            <Upload
-              accept="image/*"
-              beforeUpload={ (file) => {
-                console.log("beforeUpload",file)
-                return false;
-              }}
-              //multiple={true}
-              listType="picture-card"
-              fileList={logoFileList}
-              onChange={handleLogoFileListChange}
-            >
-              {logoFileList.length < 1 ? uploadButton : null}
-            </Upload>
-          {/* </ImgCrop> */}
+          <ImageUpload fileList={logoFileList} setFileList={setLogoFileList} />
         </Form.Item>
         <Form.Item>
           <Button type="primary" onClick={()=>{form.submit()}}>Save</Button>
         </Form.Item>
       </Form>
+
+      <Form>
+        Shipping Section
+        <Form.Item label="Type">
+            <Select options={[
+              {
+                label: "Fixed",
+                value: 'op1'
+              },
+              {
+                label: "Ranged",
+                value: 'op2'
+              }
+            ]}/>
+        </Form.Item>
+        <Form.Item label="fixed amount">
+          <Input/>
+        </Form.Item>
+        <Form.Item label="ranged amount">
+          <Input/>
+        </Form.Item>
+      </Form>
+      {
+        updateLoading ? <Loading/> : null
+      }
     </Page_01>
   )
 }
