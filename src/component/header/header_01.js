@@ -65,6 +65,11 @@ const Header_01 = (props) => {
     //   route: '/products'
     // },
     {
+      name: 'Dashboard',
+      icon: null,
+      route: '/dashboard'
+    },
+    {
       name: 'Inventory',
       icon: null,
       route: '/'

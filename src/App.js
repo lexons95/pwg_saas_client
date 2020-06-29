@@ -16,6 +16,7 @@ import Products from './component/page/Products';
 import Inventory from './component/page/Inventory';
 import Orders from './component/page/Orders';
 import Promotions from './component/page/Promotions';
+import Dashboard from './component/page/Dashboard';
 import Configuration from './component/page/Configuration';
 import Page_01 from './component/page/component/Page_01';
 
@@ -59,6 +60,7 @@ const App = (props) => {
       >
         <Switch>
           {/* <PrivateRoute exact path={'/products'} component={Products}/> */}
+          <PrivateRoute exact path={'/dashboard'} component={Dashboard} />
           <PrivateRoute exact path={'/'} component={Inventory} />
           <PrivateRoute exact path={'/main'} component={Main} />
           <PrivateRoute exact path={'/orders'} component={Orders} />
