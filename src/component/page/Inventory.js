@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import Page_01 from './component/Page_01';
 import Loading from '../../utils/component/Loading';
 import ProductForm from './component/ProductForm';
+import ProductForm2 from './component/ProductForm2';
 import { getAllProductCategory, getAllProductTags } from '../../utils/Constants';
 import { useConfigCache, getConfigCache } from '../../utils/customHook';
 import qiniuAPI from '../../utils/qiniuAPI';
@@ -520,6 +521,18 @@ const Inventory = (props) => {
         modalVisible={productFormModal}
         closeModal={handleProductFormModalClose}
       />
+
+      {/* <ProductForm2
+        // product props
+        product={selectedProduct} 
+        categories={allCategories}
+        tags={allTags}
+        refetch={refetchData}
+
+        // modal props
+        visible={productFormModal}
+        onCancel={handleProductFormModalClose}
+      /> */}
 
       {
         isLoading ? <Loading/> : null

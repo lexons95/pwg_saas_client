@@ -1,17 +1,18 @@
 import React, {useState, useEffect} from 'react';
-import { Button, Form, Input, Upload, Modal, Switch, Collapse, Select, Divider } from 'antd';
+import { Button, Form, Input, Upload, Modal, Switch, Collapse, Select, Divider, Tabs } from 'antd';
 import { useLazyQuery, useMutation } from "@apollo/react-hooks";
 import { PlusOutlined, StarOutlined, StarFilled } from '@ant-design/icons';
 import gql from "graphql-tag";
 
 import confirmation from '../../../utils/component/confirmation';
 import { showMessage } from '../../../utils/component/notification';
-import InventoryFormTable from './InventoryFormTable';
+import InventoryFormTable2 from './InventoryFormTable2';
 
 import qiniuAPI from '../../../utils/qiniuAPI';
 import { useConfigCache } from '../../../utils/customHook';
 import Loading from '../../../utils/component/Loading';
 
+const { TabPane } = Tabs;
 const { Panel } = Collapse;
 const { Option } = Select;
 
@@ -23,8 +24,6 @@ const READ_PRODUCT_INVENTORY_QUERY = gql`
       updatedAt
       price
       stock
-      onSale
-      salePrice
       weight
       variants
       published
@@ -476,19 +475,9 @@ console.log('onFinish',values)
   //   }
   // }
   return (
-    <div id="productForm">
-    {/* <Button onClick={()=>{
-      console.log('category',categories)
-      console.log('inv',inventoryData)
-      console.log('productVariants',productVariants)
-      }}>inventoryData</Button> */}
-
-      <Collapse 
-        defaultActiveKey={['1','2']} 
-        //bordered={false}
-        expandIconPosition="right"
-      >
-        <Panel header="Product Information" key="1">
+    <div id="productForm2">
+      <Tabs defaultActiveKey="1" tabPosition="top">
+        <TabPane tab="Product Information" key="1">
           <Form 
             name="complex-form" 
             form={form} 
@@ -614,29 +603,17 @@ console.log('onFinish',values)
               <Switch checkedChildren="Active" unCheckedChildren="Inactive" />
             </Form.Item>
           </Form> 
-
-        </Panel>
-        {
-          product ? (
-            <Panel header="Pricing & Variants" key="2">
-              <InventoryFormTable
-                productId={product._id}
-                inventoryData={inventoryData}
-                setInventoryData={setInventoryData}
-                productVariants={productVariants}
-                setProductVariants={setProductVariants}
-              />
-            </Panel>
-          ) : null
-        }
-        {/* {
-          product ? (
-            <Panel header="Related Products" key="3">
-              
-            </Panel>
-          ) : null
-        } */}
-      </Collapse>
+        </TabPane>
+        <TabPane tab="Pricing & Variants" key="2">
+          <InventoryFormTable2
+            productId={product._id}
+            inventoryData={inventoryData}
+            setInventoryData={setInventoryData}
+            productVariants={productVariants}
+            setProductVariants={setProductVariants}
+          />
+        </TabPane>
+      </Tabs>
       {
         isLoading ? <Loading/> : null
       }
@@ -644,8 +621,8 @@ console.log('onFinish',values)
   )
 }
 
-const ProductForm = (props) => {
-  const { product = null, categories = [], tags = [], type = "", modalVisible, refetch, closeModal } = props;
+const ProductForm2 = (props) => {
+  const { product = null, categories = [], tags = [], type = "", refetch, visible, onCancel } = props;
   const [ modalFooter, setModalFooter ] = useState([]);
 
   let modalProps = {}
@@ -653,19 +630,33 @@ const ProductForm = (props) => {
     modalProps['footer'] = modalFooter;
   }
 
+  let modalBodyStyle = {
+    position: 'relative', 
+    overflow: 'hidden', 
+    padding: 0
+  }
+
+  let modalContentWrapperStyle = {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  }
   return (
     <Modal
       title={product ? product.name : "New Product"}
       width={'95%'}
-      visible={modalVisible}
-      onCancel={closeModal}
+      visible={visible}
+      onCancel={onCancel}
       destroyOnClose
       wrapClassName={'products-modalWrapper'}
       //bodyStyle={{paddingLeft:'0'}} //for left tab
       style={{overflow:"hidden"}}
-      //bodyStyle={{paddingTop:'0'}}
+      bodyStyle={modalBodyStyle}
       {...modalProps}
     >
+    <div style={modalContentWrapperStyle}>
       <ProductInfoForm
         // product props
         product={product} 
@@ -675,11 +666,12 @@ const ProductForm = (props) => {
         refetch={refetch}
 
         // modal props
-        modalVisible={modalVisible}
-        onCancel={closeModal}
+        modalVisible={visible}
+        onCancel={onCancel}
         setModalFooter={setModalFooter}
       />
+    </div>
     </Modal>
   )
 }
-export default ProductForm;
+export default ProductForm2;

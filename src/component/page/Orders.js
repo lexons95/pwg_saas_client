@@ -7,31 +7,11 @@ import { CheckOutlined, RedoOutlined } from '@ant-design/icons';
 
 import Page_01 from './component/Page_01';
 import OrderInfo from './component/OrderInfo';
-import { useConfigCache } from '../../utils/customHook';
+import { useConfigCache, useOrdersQuery } from '../../utils/customHook';
 import Loading from '../../utils/component/Loading';
 
 const { TabPane } = Tabs;
 const { Search } = Input;
-
-const GET_ORDERS_QUERY = gql`
-  query orders($filter: JSONObject, $configId: String) {
-    orders(filter: $filter, configId: $configId) {
-      _id
-      createdAt
-      updatedAt
-      items
-      total
-      charges
-      customer
-      remark
-      paid
-      sentOut
-      trackingNum
-      deliveryFee
-      status
-    }
-  }
-`;
 
 const UPDATE_ORDER_PAYMENT_QUERY = gql`
   mutation updateOrderPayment($_id: String!, $paid: Boolean!) {
@@ -72,28 +52,19 @@ const CANCEL_ORDER_QUERY = gql`
     }
   }
 `;
+
 const Orders = (props) => {
   const configCache = useConfigCache();
   const [ orderModalDisplay, setOrderModalDisplay ] = useState(false);
   const [ selectedOrder, setSelectedOrder ] = useState(null);
 
-  const { data, loading: loadingOrders, error, refetch: refetchOrders } = useQuery(GET_ORDERS_QUERY, {
-    fetchPolicy: "cache-and-network",
-    variables: {
-      filter: {
-        sorter: {
-          createdAt: -1
-        },
-      },
-      configId: configCache.configId
+  const { data, loading: loadingOrders, error, refetch: refetchOrders } = useOrdersQuery({
+    filter: {
+      sorter: {
+        createdAt: -1
+      }
     },
-    onError: (error) => {
-      console.log("products error", error)
-
-    },
-    onCompleted: (result) => {
-      // console.log('Orders', result.orders)
-    }
+    configId: configCache.configId
   });
 
   const [ updateOrderPayment , updateOrderPaymentResult ] = useMutation(UPDATE_ORDER_PAYMENT_QUERY,{

@@ -293,3 +293,105 @@ export const clearCache = () => {
 //   }
 //   return result;
 // }
+
+
+// Orders ---------------------------- start
+
+const GET_ORDERS_QUERY = gql`
+  query orders($filter: JSONObject, $configId: String) {
+    orders(filter: $filter, configId: $configId) {
+      _id
+      createdAt
+      updatedAt
+      items
+      total
+      type
+      charges
+      customer
+      remark
+      paid
+      sentOut
+      trackingNum
+      deliveryFee
+      status
+    }
+  }
+`;
+
+export const useOrdersQuery = (options) => {
+
+  const ordersResult = useQuery(GET_ORDERS_QUERY, {
+    fetchPolicy: "cache-and-network",
+    variables: options,
+    onError: (error) => {
+      console.log("orders error", error)
+  
+    },
+    onCompleted: (result) => {
+      // console.log('Orders', result.orders)
+    }
+  });
+
+  const { loading, error } = ordersResult;
+
+  let result = ordersResult;
+  if (loading) {
+    // console.log('loading');
+  }
+  if (error) {
+    console.log('useOrdersQuery',error);
+  }
+
+  return result;
+}
+
+
+// Orders ---------------------------- end
+
+// Inventory ---------------------------- start
+const READ_PRODUCT_INVENTORY_QUERY = gql`
+  query inventory($filter: JSONObject, $configId: String) {
+    inventory(filter: $filter, configId: $configId) {
+      _id
+      createdAt
+      updatedAt
+      price
+      stock
+      weight
+      onSale
+      salePrice
+      variants
+      published
+      productId
+    }
+  }
+`;
+
+export const useInventoryQuery = (options) => {
+
+  const inventoryResult = useQuery(READ_PRODUCT_INVENTORY_QUERY, {
+    fetchPolicy: "cache-and-network",
+    variables: options,
+    onError: (error) => {
+      console.log("inventory error", error)
+  
+    },
+    onCompleted: (result) => {
+
+    }
+  });
+
+  const { loading, error } = inventoryResult;
+
+  let result = inventoryResult;
+  if (loading) {
+    // console.log('loading');
+  }
+  if (error) {
+    console.log('useOrdersQuery',error);
+  }
+
+  return result;
+}
+
+// Inventory ---------------------------- end

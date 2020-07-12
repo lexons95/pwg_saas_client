@@ -28,3 +28,26 @@
 .productForm-upload-fav-icon {
   color: white;
 }
+
+
+
+#productForm2 {
+  height: 100%;
+  width: 100%;
+  padding: 0 15px 15px 15px;
+}
+
+#productForm2 .ant-tabs {
+  height: 100%;
+  width: 100%;
+}
+
+#productForm2 .ant-tabs-content{
+  height: 100%;
+}
+
+#productForm2 .ant-tabs-tabpane {
+  overflow-y: scroll;
+  /* overflow: scroll; */
+  /* padding: 0 24px; */
+}

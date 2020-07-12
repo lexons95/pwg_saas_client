@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
-import { Table, Input, Button, Popconfirm, Form, InputNumber, Modal, Tooltip, Switch } from 'antd';
+import { Table, Input, Button, Popconfirm, Form, InputNumber, Modal, Tooltip, Switch, Checkbox } from 'antd';
 import { DeleteOutlined, PlusOutlined, EditOutlined, CheckOutlined } from '@ant-design/icons';
 import update from 'immutability-helper';
 
@@ -85,36 +85,55 @@ const EditableCell = ({
   }
   else {
     if (editable) {
-      childNode = editing ? (
-        <Form.Item
-          style={{
-            margin: 0,
-            width: '100%',
-            height: '100%'
-          }}
-          name={dataIndex}
-          rules={
-            required ? [
-              {
-                required: true,
-                message: `${title} is required.`,
-              }
-            ] : []
-          }
-        >
-          {inputs[inputType](inputRef, save)}
-        </Form.Item>
-      ) : (
-        <div
-          className="editable-cell-value-wrap"
-          style={{
-            paddingRight: 24,
-          }}
-          onClick={toggleEdit}
-        >
-          {children}
-        </div>
-      );
+      if (dataIndex == 'onSale') {
+        childNode = editing ? (   
+          <Form.Item name={'onSale'} valuePropName={'checked'}>
+            <Checkbox ref={inputRef} onPressEnter={save} onBlur={save}><span style={{userSelect: 'none'}}>on Sale</span></Checkbox>
+          </Form.Item>
+        ) : (
+          <div
+            className="editable-cell-value-wrap"
+            style={{
+              paddingRight: 24,
+            }}
+            onClick={toggleEdit}
+          >
+            {children}
+          </div>
+        );
+      }
+      else {
+        childNode = editing ? (
+          <Form.Item
+            style={{
+              margin: 0,
+              width: '100%',
+              height: '100%'
+            }}
+            name={dataIndex}
+            rules={
+              required ? [
+                {
+                  required: true,
+                  message: `${title} is required.`,
+                }
+              ] : []
+            }
+          >
+            {inputs[inputType](inputRef, save)}
+          </Form.Item>
+        ) : (
+          <div
+            className="editable-cell-value-wrap"
+            style={{
+              paddingRight: 24,
+            }}
+            onClick={toggleEdit}
+          >
+            {children}
+          </div>
+        );
+      }
     }
   }
 
@@ -151,6 +170,11 @@ const inputs = {
     return (
       <Input ref={inputRef} onPressEnter={save} onBlur={save} />
     )
+  },
+  boolean: (inputRef, save) => {
+    return (
+      <Checkbox ref={inputRef} onPressEnter={save} onBlur={save} />
+    )
   }
 }
 
@@ -172,6 +196,12 @@ const InventoryFormTable = (props) => {
       value: 'price',
       type: 'decimal',
       required: true
+    },
+    {
+      name: 'Sale Price',
+      value: 'salePrice',
+      type: 'decimal',
+      required: false
     },
     {
       name: 'Stock',
@@ -207,6 +237,20 @@ const InventoryFormTable = (props) => {
     });
 
     let defaultColumns = [
+      {
+        title: 'On Sale',
+        dataIndex: 'onSale',
+        width: 100,
+        fixed: 'right',
+        align: 'center',
+        render: (text, record) => {
+          return (
+              <div style={{width: '100%', textAlign: 'center', cursor: 'pointer'}}>
+                <Switch checkedChildren="On" unCheckedChildren="Off" checked={record.onSale} onChange={(checked, e)=>{handleUpdateOnSale(record, checked, e)}} />
+              </div>
+          )
+        } 
+      },
       {
         title: 'Published',
         dataIndex: 'published',
@@ -379,6 +423,12 @@ const InventoryFormTable = (props) => {
     e.preventDefault();
     let updateIndex = inventoryData.map((aData)=>aData.key).indexOf(selectedRow.key);
     setInventoryData(update(inventoryData, {[updateIndex]: {published: {$set: checked}}}));
+  }
+
+  const handleUpdateOnSale = (selectedRow, checked, e) => {
+    e.preventDefault();
+    let updateIndex = inventoryData.map((aData)=>aData.key).indexOf(selectedRow.key);
+    setInventoryData(update(inventoryData, {[updateIndex]: {onSale: {$set: checked}}}));
   }
 
   const handleDeleteRow = key => {
