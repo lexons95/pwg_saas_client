@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { useMutation, useApolloClient } from "@apollo/react-hooks";
 import gql from "graphql-tag";
 import { useHistory } from "react-router-dom";
-import { Menu, Button, Tooltip } from 'antd';
+import { Button, Tooltip } from 'antd';
 import {
   ArrowLeftOutlined,
   LogoutOutlined
 } from '@ant-design/icons';
 import confirmation from '../../utils/component/confirmation';
-import { useConfigCache, setConfigCache, setUserCache, clearCache } from '../../utils/customHook';
+import { useConfigCache, clearCache, useUserCache } from '../../utils/customHook';
 
 const LOGOUT_MUTATION = gql`
     mutation logout {
@@ -24,20 +24,12 @@ const Header_01 = (props) => {
   const apolloClient = useApolloClient();
   let routeHistory = useHistory();
   const config = useConfigCache();
+  const userCache = useUserCache();
   const [logout] = useMutation(LOGOUT_MUTATION, {
     onCompleted: (result) => {
       if (result && result.logout && result.logout.success) {
-        let redirectPath = '/login';
-        // if (routeHistory.location.state && routeHistory.location.state.from) {
-        //   redirectPath = routeHistory.location.state.from.pathname
-        // }
-        
         apolloClient.resetStore().then(()=>{
-          // setConfigCache(null)
-          // setUserCache(null)
           clearCache()
-          // routeHistory.push(redirectPath)
-
         })
         // apolloClient.clearStore()
       }
@@ -58,38 +50,52 @@ const Header_01 = (props) => {
     })
   }
 
-  const menuItem = [
-    // {
-    //   name: 'Products',
-    //   icon: null,
-    //   route: '/products'
-    // },
-    {
-      name: 'Dashboard',
-      icon: null,
-      route: '/dashboard'
-    },
-    {
-      name: 'Inventory',
-      icon: null,
-      route: '/'
-    },
+  let menuItem = [
     {
       name: 'Orders',
       icon: null,
-      route: '/orders'
-    },
-    {
-      name: 'Promotions',
-      icon: null,
-      route: '/promotions'
-    },
-    {
-      name: 'Configuration',
-      icon: null,
-      route: '/configuration'
+      route: '/'
     }
   ]
+
+  if (userCache && userCache.success && userCache.data) {
+    if (userCache.data.role == "TENANT") {
+      menuItem = [
+        // {
+        //   name: 'Products',
+        //   icon: null,
+        //   route: '/products'
+        // },
+        {
+          name: 'Dashboard',
+          icon: null,
+          route: '/dashboard'
+        },
+        {
+          name: 'Inventory',
+          icon: null,
+          route: '/'
+        },
+        {
+          name: 'Orders',
+          icon: null,
+          route: '/orders'
+        },
+        {
+          name: 'Promotions',
+          icon: null,
+          route: '/promotions'
+        },
+        {
+          name: 'Configuration',
+          icon: null,
+          route: '/configuration'
+        }
+      ]
+    }
+  }
+
+
 
   const getMenuItemDisplay = () => {
     let result = [];
@@ -141,9 +147,14 @@ const Header_01 = (props) => {
       <div className="header_01-footer">
         {
           config && !menuCollapsed ? (
-            <div className="header_01-item" style={{cursor: 'default'}}>
-              { config.profile.name }
-            </div>
+            <>
+              <div className="header_01-item" style={{cursor: 'default'}}>
+                { userCache.data.username }
+              </div>
+              <div className="header_01-item" style={{cursor: 'default'}}>
+                { config.profile.name }
+              </div>
+            </>
           ) : null
         }
         <div className="header_01-item" onClick={handleLogout}>

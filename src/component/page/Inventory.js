@@ -25,6 +25,7 @@ const GET_PRODUCTS_QUERY = gql`
       createdAt
       updatedAt
       name
+      subName
       description
       category
       variants
@@ -431,6 +432,7 @@ const Inventory = (props) => {
 
 
   }
+
   return (
     <Page_01
       title={"Inventory"}

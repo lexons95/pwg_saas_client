@@ -39,6 +39,7 @@ const GET_USER_CACHE_QUERY = gql`
         _id
         username
         configId
+        role
       } 
     }
   }
@@ -52,6 +53,7 @@ const SET_USER_CACHE_QUERY = gql`
         _id
         username
         configId
+        role
       } 
     }
   }
@@ -309,6 +311,7 @@ const GET_ORDERS_QUERY = gql`
       charges
       customer
       remark
+      sellerRemark
       paid
       sentOut
       trackingNum

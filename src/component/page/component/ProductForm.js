@@ -282,9 +282,14 @@ const ProductInfoForm = (props) => {
   const [updateProduct, updateProductResult ] = useMutation(UPDATE_PRODUCT_QUERY,{
     onCompleted: (result) => {
       // console.log("updateProduct result",result)
-      modalProps.onCancel();
-      refetch();
-      showMessage({type: 'success', message: 'Success: Product Updated'});
+      if (result.updateProduct && result.updateProduct.success) {
+        refetch();
+        showMessage({type: 'success', message: 'Success: Product Updated'});
+        modalProps.onCancel();
+      }
+      else {
+        showMessage({type: 'error', message: result.updateProduct.message });
+      }
     }
   })
 
@@ -504,6 +509,9 @@ console.log('onFinish',values)
               ) : null
             }
             <Form.Item name={'name'} label="Name" rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
+            <Form.Item name={'subName'} label="Sub Name">
               <Input />
             </Form.Item>
             <Form.Item name={'description'} label="Description">

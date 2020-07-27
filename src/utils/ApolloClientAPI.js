@@ -10,7 +10,10 @@ export default function ApolloClientAPI(middletierURL = null) {
   const cache = new InMemoryCache({ addTypename: false });
   const httpLink = createHttpLink({ 
     uri: middletierURL ? middletierURL : MIDDLETIER_URL,
-    credentials: "include"
+    credentials: "include",
+    // fetchOptions: {
+    //   mode: 'cors',
+    // }
   });
 
   // const httpLink2 = new HttpLink({
@@ -20,8 +23,11 @@ export default function ApolloClientAPI(middletierURL = null) {
 
   const authLink = setContext((_, { headers }) => {
     return {
-      headers: headers,
-      credentials: "include"
+      headers: {
+        ...headers,
+        //'Access-Control-Allow-Origin': '*'
+      },
+      //credentials: "include"
     }
   });
 

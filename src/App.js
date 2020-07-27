@@ -24,7 +24,7 @@ import PrivateRoute from './utils/component/PrivateRoute';
 import PublicRoute from './utils/component/PublicRoute';
 import PageNotFound from './utils/component/PageNotFound';
 import Loading from './utils/component/Loading';
-import { useConfigCache } from './utils/customHook';
+import { useConfigCache, useUserCache } from './utils/customHook';
 
 
 let Component_Layout = Component['Layout_01'];
@@ -33,7 +33,9 @@ let Component_Header = Component['Header_01'];
 
 const App = (props) => {
   const [ loggedIn, setLoggedIn ] = useState(false);
+  const [ userRole, setUserRole ] = useState(null);
   const configCache = useConfigCache();
+  const userCache = useUserCache();
 
   useEffect(()=>{
     if (configCache) {
@@ -42,7 +44,14 @@ const App = (props) => {
     else {
       setLoggedIn(false)
     }
-  },[configCache]);
+
+    if (userCache && userCache.success) {
+      setUserRole(userCache.data.role)
+    }
+    else {
+      setUserRole(null)
+    }
+  },[configCache, userCache]);
   
   const Main = () => {
     return (
@@ -51,24 +60,33 @@ const App = (props) => {
       </div>
     )
   }
-
   return (
     <Router>
       <Component_Layout
         header={loggedIn ? (<Component_Header/>) : null}
         footer={loggedIn ? "2020" : null}
       >
-        <Switch>
-          {/* <PrivateRoute exact path={'/products'} component={Products}/> */}
-          <PrivateRoute exact path={'/dashboard'} component={Dashboard} />
-          <PrivateRoute exact path={'/'} component={Inventory} />
-          <PrivateRoute exact path={'/main'} component={Main} />
-          <PrivateRoute exact path={'/orders'} component={Orders} />
-          <PrivateRoute exact path={'/promotions'} component={Promotions} />
-          <PrivateRoute exact path={'/configuration'} component={Configuration} />
-          <PublicRoute restricted={true} exact path={'/login'} component={Login} />
-          <Route component={PageNotFound} />
-        </Switch>
+        {
+          userRole == 'SUBTENANT' ? (
+            <Switch>
+              <PrivateRoute exact path={'/'} component={Orders} />
+              <PublicRoute restricted={true} exact path={'/login'} component={Login} />
+              <Route component={PageNotFound} />
+            </Switch>
+          ) : (
+            <Switch>
+              {/* <PrivateRoute exact path={'/products'} component={Products}/> */}
+              <PrivateRoute exact path={'/dashboard'} component={Dashboard} />
+              <PrivateRoute exact path={'/'} component={Inventory} />
+              <PrivateRoute exact path={'/main'} component={Main} />
+              <PrivateRoute exact path={'/orders'} component={Orders} />   
+              <PrivateRoute exact path={'/promotions'} component={Promotions} />
+              <PrivateRoute exact path={'/configuration'} component={Configuration} />
+              <PublicRoute restricted={true} exact path={'/login'} component={Login} />
+              <Route component={PageNotFound} />
+            </Switch>
+          )
+        }
       </Component_Layout>
     </Router>
   )

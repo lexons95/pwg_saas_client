@@ -2,12 +2,14 @@ import React, {useState} from 'react';
 import { Tabs, Table, Button, Input, Popconfirm } from 'antd';
 import { format, differenceInBusinessDays } from 'date-fns';
 import gql from "graphql-tag";
-import { useQuery, useMutation } from "@apollo/react-hooks";
+import { useMutation } from "@apollo/react-hooks";
 import { CheckOutlined, RedoOutlined } from '@ant-design/icons';
 
 import Page_01 from './component/Page_01';
 import OrderInfo from './component/OrderInfo';
-import { useConfigCache, useOrdersQuery } from '../../utils/customHook';
+import OrderInvoice from './component/OrderInvoice';
+
+import { useConfigCache, useUserCache, useOrdersQuery } from '../../utils/customHook';
 import Loading from '../../utils/component/Loading';
 
 const { TabPane } = Tabs;
@@ -53,8 +55,19 @@ const CANCEL_ORDER_QUERY = gql`
   }
 `;
 
+const UPDATE_ORDER_REMARK_QUERY = gql`
+  mutation updateOrderRemark($_id: String!, $sellerRemark: String!) {
+    updateOrderRemark(_id: $_id, sellerRemark: $sellerRemark) {
+      success
+      message
+      data
+    }
+  }
+`;
+
 const Orders = (props) => {
   const configCache = useConfigCache();
+  const userCache = useUserCache();
   const [ orderModalDisplay, setOrderModalDisplay ] = useState(false);
   const [ selectedOrder, setSelectedOrder ] = useState(null);
 
@@ -91,10 +104,17 @@ const Orders = (props) => {
     }
   })
 
+  const [ updateOrderRemark , updateOrderRemarkResult ] = useMutation(UPDATE_ORDER_REMARK_QUERY,{
+    onCompleted: (result) => {
+      refetchOrders()
+    }
+  })
+
   let isLoading = updateOrderStatusResult.loading ||
                   updateOrderPaymentResult.loading ||
                   updateOrderDeliveryResult.loading ||
                   cancelOrderResult.loading ||
+                  updateOrderRemarkResult.loading ||
                   loadingOrders;
 
   const handleOrderModalDisplayOpen = (selectedOrder) => {
@@ -166,6 +186,32 @@ const Orders = (props) => {
       <div>空空如也</div>
   )
 
+  const handleUpdatePayment = (record) => {
+    updateOrderPayment({
+      variables: {
+        _id: record._id,
+        paid: !record.paid
+      }
+    })
+  }
+
+  const handleCancelOrder = (record) => {
+    cancelOrder({
+      variables: {
+        _id: record._id
+      }
+    })
+  }
+
+  const handleUpdateDelivery = (record, value) => {
+    updateOrderDelivery({
+      variables: {
+        _id: record._id,
+        trackingNum: value
+      }
+    })
+  }
+
   const getColumnsByTable = () => {
 
     let tableCol1 = [...defaultColumns, ...[
@@ -174,15 +220,7 @@ const Orders = (props) => {
         dataIndex: 'paid',
         key: 'paid',
         render: (text, record) => {
-          const handleUpdatePayment = () => {
-            updateOrderPayment({
-              variables: {
-                _id: record._id,
-                paid: !record.paid
-              }
-            })
-          }
-          return (<Button size="small" type={`${text ? "primary" : "danger"}`} onClick={handleUpdatePayment}>{text ? "已付款" : "未付款"}</Button>)
+          return (<Button size="small" type={`${text ? "primary" : "danger"}`} onClick={()=>{handleUpdatePayment(record)}}>{text ? "已付款" : "未付款"}</Button>)
         }
       },
       {
@@ -190,15 +228,8 @@ const Orders = (props) => {
         dataIndex: 'action',
         key: 'action',
         render: (text, record) => {
-          const handleCancelOrder = () => {
-            cancelOrder({
-              variables: {
-                _id: record._id
-              }
-            })
-          }
           return (
-            <Popconfirm title="Sure to delete?" onConfirm={handleCancelOrder}>
+            <Popconfirm title="Sure to delete?" onConfirm={()=>{handleCancelOrder(record)}}>
               {/* <div style={{width: '100%', textAlign: 'center', cursor: 'pointer'}}>取消</div> */}
           <Button type="danger" size="small">取消</Button>
 
@@ -215,42 +246,23 @@ const Orders = (props) => {
         dataIndex: 'paid',
         key: 'paid',
         render: (text, record) => {
-          const handleUpdatePayment = () => {
-            updateOrderPayment({
-              variables: {
-                _id: record._id,
-                paid: !record.paid
-              }
-            })
-          }
-          return (<Button type={`${text ? "primary" : "danger"}`} size="small" onClick={handleUpdatePayment}>{text ? "已付款" : "未付款"}</Button>)
+          return (<Button type={`${text ? "primary" : "danger"}`} size="small" onClick={()=>{handleUpdatePayment(record)}}>{text ? "已付款" : "未付款"}</Button>)
         }
       },
       {
-        title: "Tracking No.",
-        dataIndex: 'trackingNum',
-        key: 'trackingNum',
-        width: 200,
+        title: "Action",
+        dataIndex: 'status',
+        key: 'status',
         render: (text, record) => {
-          let result = null;
-          const handleUpdateDelivery = (value) => {
-            updateOrderDelivery({
+          const handleUpdateStatus = () => {
+            updateOrderStatus({
               variables: {
                 _id: record._id,
-                trackingNum: value
+                status: "4"
               }
             })
           }
-          result = (
-            <Search
-              placeholder="Enter tracking no."
-              enterButton={(<CheckOutlined />)}
-              defaultValue={text}
-              size="small"
-              onSearch={handleUpdateDelivery}
-            />
-          )
-          return result;
+          return (<Button type="primary" size="small" onClick={handleUpdateStatus} disabled={isLoading}>Done Preparing</Button>)
         }
       }
     ]]
@@ -287,13 +299,8 @@ const Orders = (props) => {
         width: 200,
         render: (text, record) => {
           let result = null;
-          const handleUpdateDelivery = (value) => {
-            updateOrderDelivery({
-              variables: {
-                _id: record._id,
-                trackingNum: value
-              }
-            })
+          const handleOnSearch = (value) => {
+            handleUpdateDelivery(record, value)
           }
           result = (
             <Search
@@ -301,7 +308,7 @@ const Orders = (props) => {
               enterButton={(<CheckOutlined />)}
               defaultValue={text}
               size="small"
-              onSearch={handleUpdateDelivery}
+              onSearch={handleOnSearch}
             />
           )
           return result;
@@ -346,20 +353,96 @@ const Orders = (props) => {
       }
     ]]
 
+    // popup form to enter comment from seller
+    let tableCol5 = [...defaultColumns, ...[
+      {
+        title: "Action",
+        dataIndex: 'status',
+        key: 'status',
+        render: (text, record) => {
+          const handleUpdateStatus = () => {
+            updateOrderStatus({
+              variables: {
+                _id: record._id,
+                status: "4"
+              }
+            })
+          }
+          return (<Button type="primary" size="small" onClick={handleUpdateStatus} disabled={isLoading}>Done Preparing</Button>)
+        }
+      }
+    ]]
+
+    let tableCol6 = [...defaultColumns, ...[
+      {
+        title: "Tracking No.",
+        dataIndex: 'trackingNum',
+        key: 'trackingNum',
+        width: 200,
+        render: (text, record) => {
+          let result = null;
+          const handleOnSearch = (value) => {
+            handleUpdateDelivery(record, value)
+          }
+          result = (
+            <Search
+              placeholder="Enter tracking no."
+              enterButton={(<CheckOutlined />)}
+              defaultValue={text}
+              size="small"
+              onSearch={handleOnSearch}
+            />
+          )
+          return result;
+        }
+      }
+    ]]
+
+    let sellerRemarkCol = {
+      title: "Remark",
+      dataIndex: 'sellerRemark',
+      key: 'sellerRemark',
+      width: 200,
+      render: (text, record) => {
+        let result = null;
+        const handleOnSearch = (value) => {
+          updateOrderRemark({
+            variables: {
+              _id: record._id,
+              sellerRemark: value
+            }
+          })
+        }
+        result = (
+          <Search
+            placeholder="Enter remark"
+            enterButton={(<CheckOutlined />)}
+            defaultValue={text}
+            size="small"
+            onSearch={handleOnSearch}
+          />
+        )
+        return result;
+      }
+    }
+
     return {
       newOrders: tableCol1,
       paidOrders: tableCol2,
       pendingOrders: tableCol3,
-      completedOrders: tableCol4
+      completedOrders: tableCol4,
+      paidOrders2: [...tableCol5, sellerRemarkCol],
+      preparedOrders: [...tableCol6, sellerRemarkCol]
     }
   }
-
+console.log('userCache',userCache)
   const getFilteredOrders = () => {
     let allOrders = data ? data.orders : [];
     let orderList1 = [];
     let orderList2 = [];
     let orderList3 = [];
     let orderList4 = [];
+    let orderList5 = [];
 
     /*
     status
@@ -367,7 +450,7 @@ const Orders = (props) => {
     1 paid
     2 sent out
     3 completed
-    4
+    4 packed
     */
     allOrders.map((anOrder)=>{
       if (anOrder.status == null || anOrder.status == undefined) {
@@ -395,6 +478,9 @@ const Orders = (props) => {
           case "3":
             orderList4.push(anOrder);
             break;
+          case "4":
+            orderList5.push(anOrder);
+            break;
           default: break;
         }
       }
@@ -403,13 +489,20 @@ const Orders = (props) => {
       newOrders: orderList1,
       paidOrders: orderList2,
       pendingOrders: orderList3,
-      completedOrders: orderList4
+      completedOrders: orderList4,
+      paidOrders2: orderList2,
+      preparedOrders: orderList5,
+
     }
   }
 
   let filteredColumns = getColumnsByTable();
   let filteredOrders = getFilteredOrders();
 
+  let isTenant = userCache && userCache.success && userCache.data.role == 'TENANT';
+  let isSubTenant = userCache && userCache.success && userCache.data.role == 'SUBTENANT';
+
+  
   const colWidth = 150;
 
   let pagination = {
@@ -427,56 +520,110 @@ const Orders = (props) => {
       ]}
     >
       <Tabs defaultActiveKey="1">
-        <TabPane tab="New Orders" key="1">
-          <Table
-            rowKey={'_id'}
-            columns={filteredColumns.newOrders}
-            dataSource={filteredOrders.newOrders}
-            pagination={pagination}
-            size="small"
-            scroll={{x: filteredColumns.newOrders.length * colWidth}}
-            footer={null}
-            //locale={{emptyText:emptyTablePlaceholder}}
-          />
-        </TabPane>
-        <TabPane tab="Paid Orders" key="2">
-          <Table
-            rowKey={'_id'}
-            columns={filteredColumns.paidOrders}
-            dataSource={filteredOrders.paidOrders}
-            pagination={pagination}
-            size="small"
-            scroll={{x: filteredColumns.paidOrders.length * colWidth}}
-            footer={null}
-            //locale={{emptyText:emptyTablePlaceholder}}
-          />
-        </TabPane>
-        <TabPane tab="Pending Orders" key="3">
-          <Table
-            rowKey={'_id'}
-            columns={filteredColumns.pendingOrders}
-            dataSource={filteredOrders.pendingOrders}
-            pagination={pagination}
-            size="small"
-            scroll={{x: filteredColumns.pendingOrders.length * colWidth}}
-            footer={null}
-            //locale={{emptyText:emptyTablePlaceholder}}
-          />
-        </TabPane>
-        <TabPane tab="Completed Orders" key="4">
-          <Table
-            rowKey={'_id'}
-            columns={filteredColumns.completedOrders}
-            dataSource={filteredOrders.completedOrders}
-            pagination={pagination}
-            size="small"
-            scroll={{x: filteredColumns.completedOrders.length * colWidth}}
-            footer={null}
-            //locale={{emptyText:emptyTablePlaceholder}}
-          />
-        </TabPane>
+        {
+          isTenant ? (
+            <>
+              <TabPane tab="New Orders" key="1">
+                <Table
+                  rowKey={'_id'}
+                  columns={filteredColumns.newOrders}
+                  dataSource={filteredOrders.newOrders}
+                  pagination={pagination}
+                  size="small"
+                  scroll={{x: filteredColumns.newOrders.length * colWidth}}
+                  footer={null}
+                  //locale={{emptyText:emptyTablePlaceholder}}
+                />
+              </TabPane>
+              <TabPane tab="Paid Orders" key="2">
+                <Table
+                  rowKey={'_id'}
+                  columns={filteredColumns.paidOrders}
+                  dataSource={filteredOrders.paidOrders}
+                  pagination={pagination}
+                  size="small"
+                  scroll={{x: filteredColumns.paidOrders.length * colWidth}}
+                  footer={null}
+                  //locale={{emptyText:emptyTablePlaceholder}}
+                />
+              </TabPane>
+              <TabPane tab="Prepared Orders" key="6">
+                <Table
+                  rowKey={'_id'}
+                  columns={filteredColumns.preparedOrders}
+                  dataSource={filteredOrders.preparedOrders}
+                  pagination={pagination}
+                  size="small"
+                  scroll={{x: filteredColumns.preparedOrders.length * colWidth}}
+                  footer={null}
+                  //locale={{emptyText:emptyTablePlaceholder}}
+                />
+              </TabPane>
+              <TabPane tab="Pending Orders" key="3">
+                <Table
+                  rowKey={'_id'}
+                  columns={filteredColumns.pendingOrders}
+                  dataSource={filteredOrders.pendingOrders}
+                  pagination={pagination}
+                  size="small"
+                  scroll={{x: filteredColumns.pendingOrders.length * colWidth}}
+                  footer={null}
+                  //locale={{emptyText:emptyTablePlaceholder}}
+                />
+              </TabPane>
+              <TabPane tab="Completed Orders" key="4">
+                <Table
+                  rowKey={'_id'}
+                  columns={filteredColumns.completedOrders}
+                  dataSource={filteredOrders.completedOrders}
+                  pagination={pagination}
+                  size="small"
+                  scroll={{x: filteredColumns.completedOrders.length * colWidth}}
+                  footer={null}
+                  //locale={{emptyText:emptyTablePlaceholder}}
+                />
+              </TabPane>
+            </>
+          ) : null
+        }
+        
+        {
+          isSubTenant ? (
+            <>
+              <TabPane tab="Paid Orders" key="1">
+                <Table
+                  rowKey={'_id'}
+                  columns={filteredColumns.paidOrders2}
+                  dataSource={filteredOrders.paidOrders}
+                  pagination={pagination}
+                  size="small"
+                  scroll={{x: filteredColumns.paidOrders2.length * colWidth}}
+                  footer={null}
+                  //locale={{emptyText:emptyTablePlaceholder}}
+                />
+              </TabPane>
+              <TabPane tab="Prepared Orders" key="6">
+                <Table
+                  rowKey={'_id'}
+                  columns={filteredColumns.preparedOrders}
+                  dataSource={filteredOrders.preparedOrders}
+                  pagination={pagination}
+                  size="small"
+                  scroll={{x: filteredColumns.preparedOrders.length * colWidth}}
+                  footer={null}
+                  //locale={{emptyText:emptyTablePlaceholder}}
+                />
+              </TabPane>
+            </>
+          ) : null
+        }
       </Tabs>
-      <OrderInfo
+      {/* <OrderInfo
+        order={selectedOrder}
+        visible={orderModalDisplay}
+        closeModal={handleOrderModalDisplayClose}
+      /> */}
+      <OrderInvoice
         order={selectedOrder}
         visible={orderModalDisplay}
         closeModal={handleOrderModalDisplayClose}

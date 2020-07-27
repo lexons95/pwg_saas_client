@@ -192,6 +192,12 @@ const InventoryFormTable = (props) => {
 
   const fixedVariants = [
     {
+      name: 'Weight',
+      value: 'weight',
+      type: 'decimal',
+      required: false
+    },
+    {
       name: 'Price' + (configCache && configCache.currencyUnit ? ` (${configCache.currencyUnit})` : ''),
       value: 'price',
       type: 'decimal',
@@ -208,13 +214,8 @@ const InventoryFormTable = (props) => {
       value: 'stock',
       type: 'integer',
       required: true
-    },
-    {
-      name: 'Weight',
-      value: 'weight',
-      type: 'decimal',
-      required: false
     }
+
   ]
 
   const getColumns = () => {
@@ -227,7 +228,7 @@ const InventoryFormTable = (props) => {
         dataIndex: aVariant.value,
         editable: true,
         width: 110,
-        fixed: 'right',
+        //fixed: 'right',
         inputType: aVariant.type,
         required: aVariant.required,
         sorter: (a, b) => {

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Upload } from 'antd';
+import { Upload, Form } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 
 import ImgCrop from 'antd-img-crop';
 
 
 const ImageUpload = (props) => {
-  const { fileList, setFileList } = props;
+  const { fileList, setFileList, name, label } = props;
   const fileLimit = 1;
 
   const uploadButton = (
@@ -21,19 +21,21 @@ const ImageUpload = (props) => {
   };
 
   return (
-    <Upload
-      accept="image/*"
-      beforeUpload={ (file) => {
-        console.log("beforeUpload",file)
-        return false;
-      }}
-      //multiple={true}
-      listType="picture-card"
-      fileList={fileList}
-      onChange={handleFileListChange}
-    >
-      {fileList.length < fileLimit ? uploadButton : null}
-    </Upload>
+    <Form.Item label={label} name={name}>
+      <Upload
+        accept="image/*"
+        beforeUpload={ (file) => {
+          console.log("beforeUpload",file)
+          return false;
+        }}
+        //multiple={true}
+        listType="picture-card"
+        fileList={fileList}
+        onChange={handleFileListChange}
+      >
+        {fileList.length < fileLimit ? uploadButton : null}
+      </Upload>
+    </Form.Item>
   )
 }
 

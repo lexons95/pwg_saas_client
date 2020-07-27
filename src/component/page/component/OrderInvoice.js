@@ -1,10 +1,12 @@
 import React from 'react';
-import { Modal, Divider, Descriptions, List, Avatar } from 'antd';
+import { Modal, Divider, Descriptions, List, Avatar, Button } from 'antd';
 import { format } from 'date-fns';
+import { PDFDownloadLink, Document, Page, Text, StyleSheet } from '@react-pdf/renderer'
 
 import { useConfigCache } from '../../../utils/customHook';
+var domToPdf = require('dom-to-pdf');
 
-const OrderInfo = (props) => {
+const OrderInvoice = (props) => {
   const { order, closeModal, visible, ...restProps } = props;
   const configCache = useConfigCache();
 
@@ -46,6 +48,37 @@ const OrderInfo = (props) => {
     extraCharges.push(foundDutyTaxInsurance)
   }
 
+
+
+  const getPdf = () => {
+    var element = document.getElementById('orderInvoice');
+    var options = {
+      filename: 'test.pdf'
+    };
+    domToPdf(element, options, function() {
+      console.log('done');
+    });
+
+  }
+
+  const MyDoc = () => {
+    const styles = StyleSheet.create({
+      invoiceHeaderStyle: {
+
+      }
+    })
+
+    return (
+      <Document>
+        <Page>
+          <Text render={({ pageNumber, totalPages }) => (
+            `${pageNumber} / ${totalPages}`
+          )} fixed />
+        </Page>
+      </Document>
+    )
+}
+
   return (
     <Modal
       title={"Order"}
@@ -57,6 +90,14 @@ const OrderInfo = (props) => {
       wrapClassName={'products-modalWrapper'}
       style={{overflow:"hidden"}}
     >
+    <Button onClick={getPdf}>pdfff</Button>
+    <div id="orderInvoice">
+    {/* <div>
+      <MyDoc />
+      <PDFDownloadLink document={<MyDoc />} fileName="somename.pdf">
+        {({ blob, url, loading, error }) => (loading ? 'Loading document...' : 'Download now!')}
+      </PDFDownloadLink>
+    </div> */}
     {
       order ?
       <React.Fragment>
@@ -117,17 +158,7 @@ const OrderInfo = (props) => {
           )}
         />
 
-        <div style = {{textAlign:'center'}}>
-          <h1>扫码付款后记得备注名字，后台需要确认订单</h1>
-        </div>
-
         <div className="orderInfo-extra">
-          {configCache.paymentQRImage ?
-            <div style={{textAlign:'center',flexGrow:1}}>
-              <img src={configCache.imageSrc + configCache.paymentQRImage} />
-            </div>
-            : null
-          }
         {
           order.sentOut && order.trackingNum ? (
             <div style={{textAlign:'center',flexGrow:1}}>
@@ -139,9 +170,9 @@ const OrderInfo = (props) => {
       </React.Fragment>
       : "Not found"
     }
-
+    </div>
     </Modal>
   )
 }
 
-export default OrderInfo;
+export default OrderInvoice;

@@ -48,7 +48,7 @@ const DashBoard = (props) => {
 
   }
 
-  console.log('orders',orders)
+  // console.log('orders',orders)
   let chartSetting = {
     data: {
       type: '0'

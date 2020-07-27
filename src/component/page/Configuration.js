@@ -11,10 +11,34 @@ import qiniuAPI from '../../utils/qiniuAPI';
 import { useConfigCache, setConfigCache } from '../../utils/customHook';
 import { showMessage } from '../../utils/component/notification';
 import Loading from '../../utils/component/Loading';
+import axios from 'axios';
+
+import awsS3API from '../../utils/awsS3API';
+
 
 const UPDATE_CONFIG_QUERY = gql`
   mutation updateConfig($config: JSONObject, $configId: String!) {
     updateConfig(config: $config, configId: $configId) {
+      success
+      message
+      data
+    }
+  }
+`;
+
+const TEST_AWS = gql`
+  query getS3PutUrl($bucketName: String!, $Key: String!, $ContentType: String!) {
+    getS3PutUrl(bucketName: $bucketName, Key: $Key, ContentType: $ContentType) {
+      success
+      message
+      data
+    }
+  }
+`;
+
+const S3_UPLOADONE_QUERY = gql`
+  mutation s3UploadOne($name: String!, $file: Upload!) {
+    s3UploadOne(name: $name, file: $file) {
       success
       message
       data
@@ -50,7 +74,7 @@ const Configuration = (props) => {
           thumbUrl: configCache.imageSrc + configCache.paymentQRImage
         }])
       }
-      console.log('logoFileList',configCache.profile)
+      // console.log('logoFileList',configCache.profile)
 
       if (configCache.profile && configCache.profile.logo && configCache.profile.logo != '') {
         setLogoFileList([{
@@ -68,9 +92,9 @@ const Configuration = (props) => {
   },[configCache]);
 
   const handleSubmit = async (values) => {
-    console.log('handleSubmit',values)
-    console.log('filelist',fileList)
-    console.log('logoFileList',logoFileList)
+    // console.log('handleSubmit',values)
+    // console.log('filelist',fileList)
+    // console.log('logoFileList',logoFileList)
 
     let setter = {
       'profile.notice': values.notice,
@@ -202,6 +226,79 @@ const Configuration = (props) => {
 
   }
 
+  const [ s3FileList, setS3FileList ] = useState([]);
+
+  const [ testAWS ] = useLazyQuery(TEST_AWS,{
+    onCompleted: async (result) => {
+      console.log('resultresult',result)
+      if (result.getS3PutUrl && result.getS3PutUrl.success) {
+        let file = s3FileList[0];
+        console.log('filefile',file.type)
+        let options = {
+          // params: {
+          //   Key: file.name,
+          //   ContentType: file.type
+          // },
+          headers: {
+            'Content-Type': file.type,
+            //'Access-Control-Allow-Origin': '*'
+          }
+        }
+
+        await axios
+        .put(result.getS3PutUrl.data, file.originFileObj, options)
+        .then(res => {
+          console.log('Upload Successful',res)
+        })
+        .catch(err => {
+          console.log('Sorry, something went wrong')
+          console.log('err', err);
+        });
+      }
+    }
+  });
+
+  const [ uploadOne ] = useMutation(S3_UPLOADONE_QUERY,{
+    onCompleted: async (result) => {
+      console.log('resultresult',result)
+      if (result.getS3PutUrl && result.getS3PutUrl.success) {
+        console.log('uploadOne', result)
+      }
+    }
+  });
+
+  const fileLimit2 = 1;
+
+  const uploadButton2 = (
+    <div>
+      <PlusOutlined />
+      <div className="ant-upload-text">Upload</div>
+    </div>
+  );
+
+  const handleFileListChange2 = ({ fileList: newFileList }) => {
+    setS3FileList(newFileList)
+    if (newFileList.length > 0) {
+      // let x = JSON.parse(JSON.stringify(newFileList[0]))
+      let x = newFileList[0]
+      console.log('newFileList',x)
+      testAWS({
+        variables: {
+          bucketName: 'mananml',
+          Key: 'testing.' + x.type,
+          ContentType: x.type
+        }
+      })
+      // uploadOne({
+      //   variables: {
+      //     name: x.name,
+      //     file: newFileList[0].originFileObj
+      //   }
+      // })
+      console.log('x.originFileObj',newFileList[0].originFileObj)
+    }
+  };
+
   // additional charges to set in config
   // cart limitation to place order: total weight/price/quantity
   return (
@@ -215,19 +312,32 @@ const Configuration = (props) => {
         <Form.Item label="Delivery Fee (Fixed)" name="delivery">
           <InputNumber/>
         </Form.Item>
-        <Form.Item label="Payment QR" name="paymentQRImage">
-          <ImageUpload fileList={fileList} setFileList={setFileList} />
-        </Form.Item>
-        <Form.Item label="Logo" name="logo">
-          <ImageUpload fileList={logoFileList} setFileList={setLogoFileList} />
-        </Form.Item>
+        <ImageUpload fileList={fileList} setFileList={setFileList} label="Payment QR" name="paymentQRImage"/>
+        <ImageUpload fileList={logoFileList} setFileList={setLogoFileList} label="Logo" name="logo"/>
         <Form.Item>
           <Button type="primary" onClick={()=>{form.submit()}}>Save</Button>
         </Form.Item>
       </Form>
 
-      <Form>
+      {/* <Button onClick={()=>{}}>Test AWS</Button> */}
+      {/* <Upload
+        accept="image/*"
+        beforeUpload={ (file) => {
+          console.log("beforeUpload",file)
+          return false;
+        }}
+        //multiple={true}
+        listType="picture-card"
+        fileList={s3FileList}
+        onChange={handleFileListChange2}
+      >
+        {s3FileList.length < fileLimit2 ? uploadButton2 : null}
+      </Upload> */}
+      {/* <ImageUpload fileList={s3FileList} setFileList={setS3FileList} /> */}
+      {/* <Form>
+        
         Shipping Section
+
         <Form.Item label="Type">
             <Select options={[
               {
@@ -246,7 +356,7 @@ const Configuration = (props) => {
         <Form.Item label="ranged amount">
           <Input/>
         </Form.Item>
-      </Form>
+      </Form> */}
       {
         updateLoading ? <Loading/> : null
       }
