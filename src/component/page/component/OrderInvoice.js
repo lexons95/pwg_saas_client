@@ -90,7 +90,7 @@ const OrderInvoice = (props) => {
       wrapClassName={'products-modalWrapper'}
       style={{overflow:"hidden"}}
     >
-    <Button onClick={getPdf}>pdfff</Button>
+    {/* <Button onClick={getPdf}>pdfff</Button> */}
     <div id="orderInvoice">
     {/* <div>
       <MyDoc />
