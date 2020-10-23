@@ -105,3 +105,6 @@ dist
 
 # production
 /build
+
+# api key
+.env
