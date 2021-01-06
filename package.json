@@ -13,7 +13,7 @@
     "apollo-link-context": "^1.0.20",
     "apollo-link-http": "^1.5.16",
     "aws-sdk": "^2.717.0",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "babel-plugin-import": "^1.13.0",
     "customize-cra": "^0.9.1",
     "date-fns": "^2.12.0",
