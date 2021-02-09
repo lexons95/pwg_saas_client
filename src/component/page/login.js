@@ -3,6 +3,7 @@ import { useLazyQuery, useMutation } from "@apollo/react-hooks";
 import gql from "graphql-tag";
 import { Form, Input, Button, Checkbox } from 'antd';
 import { useHistory } from "react-router-dom";
+import Cookies from 'js-cookie';
 
 import Loading from '../../utils/component/Loading';
 import { setUserCache, setConfigCache } from '../../utils/customHook';
@@ -14,6 +15,7 @@ const LOGIN_MUTATION = gql`
         success
         message
         data
+        token
       }
     }
 `;
@@ -52,6 +54,12 @@ const Login = (props) => {
         // if (routeHistory.location.state && routeHistory.location.state.from) {
         //   redirectPath = routeHistory.location.state.from.pathname
         // }
+        const accessTokenHeaderLabel = "saas-access-TENANT";
+        const refreshTokenHeaderLabel = "saas-refresh-TENANT";
+        
+        Cookies.set(accessTokenHeaderLabel, result.login.token.accessToken)
+        Cookies.set(refreshTokenHeaderLabel, result.login.token.refreshToken)
+
         fetchConfig({
           variables: {
             configId: result.login.data.configId
